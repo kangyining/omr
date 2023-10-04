@@ -294,6 +294,7 @@ MM_StartupManager::handleOption(MM_GCExtensionsBase *extensions, char *option)
 		} else {
 			extensions->gcThreadCount = forcedThreadCount;
 			extensions->gcThreadCountForced = true;
+			extensions->adaptiveGCThreading = false;
 		}
 	} else {
 		/* unknown option */
