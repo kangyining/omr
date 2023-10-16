@@ -340,3 +340,14 @@ MM_GCExtensionsBase::usingSATBBarrier()
 #endif /* defined(OMR_GC_REALTIME) */
 	return false;
 }
+
+void
+MM_GCExtensionsBase::setGCThreadCount(uintptr_t value)
+{
+	if (0 != gcMaxThreadCount) {
+		gcThreadCount = OMR_MIN(value, gcMaxThreadCount);
+	}
+	else{
+		gcThreadCount = value;
+	}
+}

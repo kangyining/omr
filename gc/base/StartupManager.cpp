@@ -292,7 +292,7 @@ MM_StartupManager::handleOption(MM_GCExtensionsBase *extensions, char *option)
 		if (0 >= getUDATAValue(option + OMR_XGCTHREADS_LENGTH, &forcedThreadCount)) {
 			result = false;
 		} else {
-			extensions->gcThreadCount = forcedThreadCount;
+			extensions->setGCThreadCount(forcedThreadCount);
 			extensions->gcThreadCountForced = true;
 		}
 	} else {

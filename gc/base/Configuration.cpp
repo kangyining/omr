@@ -448,7 +448,7 @@ MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 	MM_GCExtensionsBase* extensions = env->getExtensions();
 
 	if (!extensions->gcThreadCountForced) {
-		extensions->gcThreadCount = supportedGCThreadCount(env);
+		extensions->setGCThreadCount(supportedGCThreadCount(env));
 	}
 }
 
@@ -540,9 +540,9 @@ MM_Configuration::reinitializeForRestore(MM_EnvironmentBase* env)
 	 * This adjustment may no longer be necessary in the future once the shutdown behavior
 	 * of dispatcher threads during restore is thoroughly tested.
 	 */
-	extensions->gcThreadCount = OMR_MAX(
+	extensions->setGCThreadCount(OMR_MAX(
 			extensions->dispatcher->threadCountMaximum(),
-			extensions->gcThreadCount);
+			extensions->gcThreadCount));
 
 	initializeGCParameters(env);
 

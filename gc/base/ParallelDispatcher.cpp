@@ -701,7 +701,7 @@ MM_ParallelDispatcher::contractThreadPool(MM_EnvironmentBase *env, uintptr_t new
 
 		Assert_MM_true(_threadShutdownCount == expectedThreadShutdownThread);
 
-		_extensions->gcThreadCount = newThreadCount;
+		_extensions->setGCThreadCount(newThreadCount);
 		_activeThreadCount = newThreadCount;
 		_threadCount = newThreadCount;
 		_threadCountMaximum = newThreadCount;
@@ -748,7 +748,7 @@ MM_ParallelDispatcher::expandThreadPool(MM_EnvironmentBase *env)
 				newThreadCount = _threadShutdownCount + 1;
 			}
 
-			_extensions->gcThreadCount = newThreadCount;
+			_extensions->setGCThreadCount(newThreadCount);
 			_threadCount = newThreadCount;
 			_threadCountMaximum = newThreadCount;
 		}
