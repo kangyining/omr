@@ -461,6 +461,7 @@ public:
 #endif /* defined(OMR_GC_BATCH_CLEAR_TLH) */
 	omrthread_monitor_t gcStatsMutex;
 	uintptr_t gcThreadCount; /**< Initial number of GC threads - chosen default or specified in java options*/
+	uintptr_t gcMaxThreadCount;
 	bool gcThreadCountForced; /**< true if number of GC threads is specified in java options. Currently we have a few ways to do this:
 										-Xgcthreads		-Xthreads= (RT only)	-XthreadCount= */
 	uintptr_t dispatcherHybridNotifyThreadBound; /** Bound for determining hybrid notification type (Individual notifies for count < MIN(bound, maxThreads/2), otherwise notify_all) */
@@ -1648,6 +1649,7 @@ public:
 		, batchClearTLH(0)
 #endif /* defined(OMR_GC_BATCH_CLEAR_TLH) */
 		, gcThreadCount(0)
+		, gcMaxThreadCount(0)
 		, gcThreadCountForced(false)
 		, dispatcherHybridNotifyThreadBound(16)
 #if defined(OMR_GC_MODRON_SCAVENGER) || defined(OMR_GC_VLHGC)
