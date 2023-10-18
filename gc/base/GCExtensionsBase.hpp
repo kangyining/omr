@@ -355,6 +355,7 @@ public:
 
 	const char* gcModeString;
 	uintptr_t splitFreeListSplitAmount;
+	bool splitFreeListAmountForced;
 	uintptr_t splitFreeListNumberChunksPrepared; /**< Used in MPSAOL postProcess. Shared for all MPSAOLs. Do not overwrite during postProcess for any MPSAOL. */
 	bool enableHybridMemoryPool;
 
@@ -406,7 +407,7 @@ public:
 
 	uintptr_t workpacketCount; /**< this value is ONLY set if -Xgcworkpackets is specified - otherwise the workpacket count is determined heuristically */
 	uintptr_t packetListSplit; /**< the number of ways to split packet lists, set by -XXgc:packetListLockSplit=, or determined heuristically based on the number of GC threads */
-
+	bool packetListSplitForced;
 	uintptr_t markingArraySplitMaximumAmount; /**< maximum number of elements to split array scanning work in marking scheme */
 	uintptr_t markingArraySplitMinimumAmount; /**< minimum number of elements to split array scanning work in marking scheme */
 
@@ -501,6 +502,7 @@ public:
 	bool scavengerEnabled;
 	bool scavengerRsoScanUnsafe;
 	uintptr_t cacheListSplit; /**< the number of ways to split scanCache lists, set by -XXgc:cacheListLockSplit=, or determined heuristically based on the number of GC threads */
+	bool cacheListSplitForced;
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 	bool softwareRangeCheckReadBarrier; /**< enable software read barrier instead of hardware guarded loads when running with CS, complimentary to concurrentScavengerHWSupport with CS active */
 	bool softwareRangeCheckReadBarrierForced; /**< true if usage of softwareRangeCheckReadBarrier is requested explicitly */
@@ -1566,6 +1568,7 @@ public:
 		, vmThreadAllocatedMost(NULL)
 		, gcModeString(NULL)
 		, splitFreeListSplitAmount(0)
+		, splitFreeListAmountForced(false)
 		, splitFreeListNumberChunksPrepared(0)
 		, enableHybridMemoryPool(false)
 		, largeObjectArea(false)
@@ -1603,6 +1606,7 @@ public:
 		, useGCStartupHints(true)
 		, workpacketCount(0) /* only set if -Xgcworkpackets specified */
 		, packetListSplit(0)
+		, packetListSplitForced(false)
 		, markingArraySplitMaximumAmount(DEFAULT_ARRAY_SPLIT_MAXIMUM_SIZE)
 		, markingArraySplitMinimumAmount(DEFAULT_ARRAY_SPLIT_MINIMUM_SIZE)
 		, rootScannerStatsEnabled(false)
@@ -1681,6 +1685,7 @@ public:
 		, scavengerEnabled(false)
 		, scavengerRsoScanUnsafe(false)
 		, cacheListSplit(0)
+		, cacheListSplitForced(false)
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 		, softwareRangeCheckReadBarrier(false)
 		, softwareRangeCheckReadBarrierForced(false)

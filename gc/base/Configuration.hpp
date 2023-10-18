@@ -183,9 +183,6 @@ public:
 
 	MM_Configuration(MM_EnvironmentBase* env, MM_GCPolicy gcPolicy, MM_AlignmentType alignmentType, uintptr_t defaultRegionSize, uintptr_t defaultArrayletLeafSize, MM_GCWriteBarrierType writeBarrierType, MM_GCAllocationType allocationType)
 		: MM_BaseVirtual()
-		, _packetListSplitForced(false)
-		, _cacheListSplitForced(false)
-		, _splitFreeListAmountForced(false)
 		, _delegate(gcPolicy)
 		, _alignmentType(alignmentType)
 		, _defaultRegionSize(defaultRegionSize)
