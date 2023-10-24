@@ -148,7 +148,7 @@ static void globalGCHookAFCycleEnd(J9HookInterface** hook, uintptr_t eventNum, v
 #if defined(OMR_GC_MODRON_CONCURRENT_MARK)
 static void globalGCHookCCStart(J9HookInterface** hook, uintptr_t eventNum, void* eventData, void* userData);
 static void globalGCHookCCEnd(J9HookInterface** hook, uintptr_t eventNum, void* eventData, void* userData); 
-#endif /* OMR_GC_MODRON_CONCURRENT_MARK */
+#endif /* OM_GC_MODRON_CONCURRENT_MARK */
 static void globalGCHookSysStart(J9HookInterface** hook, uintptr_t eventNum, void* eventData, void* userData);
 static void globalGCHookSysEnd(J9HookInterface** hook, uintptr_t eventNum, void* eventData, void* userData);
 
@@ -188,15 +188,23 @@ fixObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobjectp
 static void
 fixFreeObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobjectptr_t object, void *userData)
 {
+	OMRPORT_ACCESS_FROM_OMRVMTHREAD(omrVMThread);
 	MM_GCExtensionsBase *extensions = MM_GCExtensionsBase::getExtensions(omrVMThread->_vm);
 	// MM_ParallelGlobalGC *collector = (MM_ParallelGlobalGC *)extensions->getGlobalCollector();
+	omrtty_printf("Current actual size: %d\n", extensions->objectModel.getSizeInBytesWithHeader(object));
+	omrtty_printf("Current consumed size: %d\n", extensions->objectModel.getConsumedSizeInBytesWithHeader(object));
 	if(extensions->objectModel.isDeadObject(object)){
 		// MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
+		MM_HeapLinkedFreeHeader* freeHeader = MM_HeapLinkedFreeHeader::getHeapLinkedFreeHeader(object);
+		
+		omrtty_printf("Current size is: %d\n", freeHeader->getSize());
+		omrtty_printf("Current next ptr is: %p\n\n", freeHeader->getNext(false));
 		uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
 		// memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
 		OMRZeroMemory(object, deadObjectByteSize);
 		/* the userdata is a counter of dead objects fixed up so increment it here as a uintptr_t */
 		*((uintptr_t *)userData) += 1;
+
 	}
 }
 #if defined(OMR_GC_MODRON_SCAVENGER)
