@@ -198,11 +198,13 @@ fixFreeObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobj
 		// MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
 		MM_HeapLinkedFreeHeader* freeHeader = MM_HeapLinkedFreeHeader::getHeapLinkedFreeHeader(object);
 		// 
-		omrtty_printf("Current size is: %d\n\n\n", freeHeader->getSize());
-		omrtty_printf("Current next ptr is: %p\n\n\n", freeHeader->getNext(false));
+		omrtty_printf("Current size is: %d\n", freeHeader->getSize());
+		omrtty_printf("Current next ptr is: %p\n", freeHeader->getNext(false));
 		// uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
 		// memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
-		OMRZeroMemory(object+sizeof(MM_HeapLinkedFreeHeader), freeHeader->getSize()-sizeof(MM_HeapLinkedFreeHeader));
+		omrtty_printf("Current starting ptr is: %p\n", (void*)((uintptr_t)object+sizeof(MM_HeapLinkedFreeHeader)));
+		omrtty_printf("Current step size is: %p\n", freeHeader->getSize()-sizeof(MM_HeapLinkedFreeHeader));
+		OMRZeroMemory((void*)((uintptr_t)object+sizeof(MM_HeapLinkedFreeHeader)), freeHeader->getSize()-sizeof(MM_HeapLinkedFreeHeader));
 		/* the userdata is a counter of dead objects fixed up so increment it here as a uintptr_t */
 		*((uintptr_t *)userData) += 1;
 
