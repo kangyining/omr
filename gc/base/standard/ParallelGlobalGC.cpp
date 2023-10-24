@@ -191,17 +191,18 @@ fixFreeObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobj
 	OMRPORT_ACCESS_FROM_OMRVMTHREAD(omrVMThread);
 	MM_GCExtensionsBase *extensions = MM_GCExtensionsBase::getExtensions(omrVMThread->_vm);
 	// MM_ParallelGlobalGC *collector = (MM_ParallelGlobalGC *)extensions->getGlobalCollector();
-	omrtty_printf("Current actual size: %d\n", extensions->objectModel.getSizeInBytesWithHeader(object));
-	omrtty_printf("Current consumed size: %d\n", extensions->objectModel.getConsumedSizeInBytesWithHeader(object));
+
+	omrtty_printf("Current object address: %p\n", (void*)object);
+	// omrtty_printf("Current consumed size: %d\n", extensions->objectModel.getConsumedSizeInBytesWithHeader(object));
 	if(extensions->objectModel.isDeadObject(object)){
 		// MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
 		MM_HeapLinkedFreeHeader* freeHeader = MM_HeapLinkedFreeHeader::getHeapLinkedFreeHeader(object);
-		
-		omrtty_printf("Current size is: %d\n", freeHeader->getSize());
-		omrtty_printf("Current next ptr is: %p\n\n", freeHeader->getNext(false));
-		uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
+		// 
+		omrtty_printf("Current size is: %d\n\n\n", freeHeader->getSize());
+		omrtty_printf("Current next ptr is: %p\n\n\n", freeHeader->getNext(false));
+		// uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
 		// memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
-		OMRZeroMemory(object, deadObjectByteSize);
+		OMRZeroMemory(object+sizeof(MM_HeapLinkedFreeHeader), freeHeader->getSize()-sizeof(MM_HeapLinkedFreeHeader));
 		/* the userdata is a counter of dead objects fixed up so increment it here as a uintptr_t */
 		*((uintptr_t *)userData) += 1;
 
@@ -1148,15 +1149,16 @@ MM_ParallelGlobalGC::internalPostCollect(MM_EnvironmentBase *env, MM_MemorySubSp
 #if defined(OMR_GC_LARGE_OBJECT_AREA)
 	_extensions->lastGlobalGCFreeBytesLOA = _extensions->heap->getApproximateActiveFreeLOAMemorySize(MEMORY_TYPE_OLD); 
 #endif /* defined (OMR_GC_LARGE_OBJECT_AREA) */
-
-
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	omrtty_printf("Current gc code is: %d\n", env->_cycleState->_gcCode.getCode());
+	clearHeap(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixFreeObject);
 #if defined(OMR_ENV_DATA64) && defined(OMR_GC_FULL_POINTERS)
 	if (!env->compressObjectReferences()) {
 		if (1 == _extensions->fvtest_enableReadBarrierVerification) {
 			/* poison root slots */
 			_delegate.poisonSlots(env);
 			/* poison heap object slots */
-			clearHeap(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixFreeObject);
+			
 			poisonHeap(env);
 		}
 	}
@@ -1328,7 +1330,8 @@ MM_ParallelGlobalGC::clearHeap(MM_EnvironmentBase *env,UDATA walkFlags, uintptr_
 {
 	uintptr_t fixedObjectCount = 0;
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
-	_heapWalker->allObjectsDo(env, walkFunction, &fixedObjectCount, walkFlags, true, false, true);
+	omrtty_printf("ClearHeap CALLED.\n");
+	_heapWalker->allObjectsDo(env, walkFunction, &fixedObjectCount, walkFlags, false, false, true);
 	U_64 startTime = omrtime_hires_clock();
 	_extensions->globalGCStats.fixHeapForWalkTime = omrtime_hires_delta(startTime, omrtime_hires_clock(), OMRPORT_TIME_DELTA_IN_MICROSECONDS);
 	_extensions->globalGCStats.fixHeapForWalkReason = walkReason;
