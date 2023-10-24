@@ -185,6 +185,19 @@ fixObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobjectp
 	}
 }
 
+static void
+fixFreeObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobjectptr_t object, void *userData)
+{
+	MM_GCExtensionsBase *extensions = MM_GCExtensionsBase::getExtensions(omrVMThread->_vm);
+	// MM_ParallelGlobalGC *collector = (MM_ParallelGlobalGC *)extensions->getGlobalCollector();
+	if(extensions->objectModel.isDeadObject(object)){
+		MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
+		uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
+		memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
+		/* the userdata is a counter of dead objects fixed up so increment it here as a uintptr_t */
+		*((uintptr_t *)userData) += 1;
+	}
+}
 #if defined(OMR_GC_MODRON_SCAVENGER)
 /**
  * Fix the heap if the remembered set for the scavenger is in an overflow state.
@@ -429,7 +442,7 @@ MM_ParallelGlobalGC::mainThreadGarbageCollect(MM_EnvironmentBase *env, MM_Alloca
 		/* This thread is doing GC work, account for the time spent into the GC bucket */
 		omrthread_set_category(env->getOmrVMThread()->_os_thread, J9THREAD_CATEGORY_SYSTEM_GC_THREAD, J9THREAD_TYPE_SET_GC);
 	}
-
+	OMRPORT_ACCESS_FROM_OMRPORT(env->getPortLibrary());
 	/* Perform any main-specific setup */
 	/* Tell the GAM to flush its contexts */
 	MM_GlobalAllocationManager *gam = _extensions->globalAllocationManager;
@@ -507,14 +520,22 @@ MM_ParallelGlobalGC::mainThreadGarbageCollect(MM_EnvironmentBase *env, MM_Alloca
 #endif /* OMR_GC_MODRON_COMPACTION */
 
 	/* If the delegate has isAllowUserHeapWalk set, fix the heap so that it can be walked */
+	// omrtty_printf("cp0\n");
+	// J9MMCONSTANT_EXPLICIT_GC_PREPARE_FOR_CHECKPOINT == env->_cycleState->_gcCode.getCode()
 	if (_delegate.isAllowUserHeapWalk() || env->_cycleState->_gcCode.isRASDumpGC()) {
+		// omrtty_printf("cp0.5\n");
+		omrtty_printf("current gccode is: %d\n",env->_cycleState->_gcCode.getCode());
 		if (!_fixHeapForWalkCompleted) {
+			// omrtty_printf("cp1\n");
+			// omrtty_printf("cp1.5: %d\n",compactedThisCycle);
 #if defined(OMR_GC_MODRON_COMPACTION)
 			if (compactedThisCycle) {
+				// omrtty_printf("cp2\n");
 				getCompactScheme(env)->fixHeapForWalk(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING);
 			} else
 #endif /* OMR_GC_MODRON_COMPACTION */
 			{
+				// omrtty_printf("cp3\n");
 				fixHeapForWalk(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixObject);
 			}
 			/* since this is the superset of all walk operations, we can safely set the flag that states other walks
@@ -1126,6 +1147,7 @@ MM_ParallelGlobalGC::internalPostCollect(MM_EnvironmentBase *env, MM_MemorySubSp
 			/* poison root slots */
 			_delegate.poisonSlots(env);
 			/* poison heap object slots */
+			fixHeapForWalk(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixFreeObject);
 			poisonHeap(env);
 		}
 	}
@@ -1282,7 +1304,7 @@ MM_ParallelGlobalGC::fixHeapForWalk(MM_EnvironmentBase *env, UDATA walkFlags, ui
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	U_64 startTime = omrtime_hires_clock();
 
-	_heapWalker->allObjectsDo(env, walkFunction, &fixedObjectCount, walkFlags, true, false);
+	_heapWalker->allObjectsDo(env, walkFunction, &fixedObjectCount, walkFlags, true, false, false);
 
 	_extensions->globalGCStats.fixHeapForWalkTime = omrtime_hires_delta(startTime, omrtime_hires_clock(), OMRPORT_TIME_DELTA_IN_MICROSECONDS);
 	_extensions->globalGCStats.fixHeapForWalkReason = walkReason;
@@ -1899,14 +1921,14 @@ void
 MM_ParallelGlobalGC::poisonHeap(MM_EnvironmentBase *env)
 {
 	/* This will poison only the heap slots */
-	_heapWalker->allObjectsDo(env, poisonReferenceSlots, NULL, 0, true, false);
+	_heapWalker->allObjectsDo(env, poisonReferenceSlots, NULL, 0, true, false, false);
 }
 
 void
 MM_ParallelGlobalGC::healHeap(MM_EnvironmentBase *env)
 {
 	/* This will heal only the heap slots */
-	_heapWalker->allObjectsDo(env, healReferenceSlots, NULL, 0, false, false);
+	_heapWalker->allObjectsDo(env, healReferenceSlots, NULL, 0, false, false, false);
 	/* Don't have the mark map at the start of gc so we'll have to iterate over
 	 * in a sequential manner
 	 */
