@@ -1156,7 +1156,7 @@ MM_ParallelGlobalGC::internalPostCollect(MM_EnvironmentBase *env, MM_MemorySubSp
 			/* poison root slots */
 			_delegate.poisonSlots(env);
 			/* poison heap object slots */
-			fixHeapForWalk(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixFreeObject);
+			clearHeap(env, MEMORY_TYPE_RAM, FIXUP_DEBUG_TOOLING, fixFreeObject);
 			poisonHeap(env);
 		}
 	}
@@ -1323,6 +1323,17 @@ MM_ParallelGlobalGC::fixHeapForWalk(MM_EnvironmentBase *env, UDATA walkFlags, ui
 	return fixedObjectCount;
 }
 
+uintptr_t
+MM_ParallelGlobalGC::clearHeap(MM_EnvironmentBase *env,UDATA walkFlags, uintptr_t walkReason, MM_HeapWalkerObjectFunc walkFunction)
+{
+	uintptr_t fixedObjectCount = 0;
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	_heapWalker->allObjectsDo(env, walkFunction, &fixedObjectCount, walkFlags, true, false, true);
+	U_64 startTime = omrtime_hires_clock();
+	_extensions->globalGCStats.fixHeapForWalkTime = omrtime_hires_delta(startTime, omrtime_hires_clock(), OMRPORT_TIME_DELTA_IN_MICROSECONDS);
+	_extensions->globalGCStats.fixHeapForWalkReason = walkReason;
+	return fixedObjectCount;
+}
 /* (non-doxygen)
  * @see MM_GlobalCollector::heapAddRange()
  */
