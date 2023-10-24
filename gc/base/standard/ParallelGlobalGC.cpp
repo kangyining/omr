@@ -191,9 +191,10 @@ fixFreeObject(OMR_VMThread *omrVMThread, MM_HeapRegionDescriptor *region, omrobj
 	MM_GCExtensionsBase *extensions = MM_GCExtensionsBase::getExtensions(omrVMThread->_vm);
 	// MM_ParallelGlobalGC *collector = (MM_ParallelGlobalGC *)extensions->getGlobalCollector();
 	if(extensions->objectModel.isDeadObject(object)){
-		MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
+		// MM_MemorySubSpace *memorySubSpace = region->getSubSpace();
 		uintptr_t deadObjectByteSize = extensions->objectModel.getConsumedSizeInBytesWithHeader(object);
-		memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
+		// memorySubSpace->abandonHeapChunk(object, ((U_8*)object) + deadObjectByteSize);
+		OMRZeroMemory(object, deadObjectByteSize);
 		/* the userdata is a counter of dead objects fixed up so increment it here as a uintptr_t */
 		*((uintptr_t *)userData) += 1;
 	}
