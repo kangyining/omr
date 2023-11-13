@@ -294,7 +294,8 @@ typedef enum {
 	COMPACT_CONTRACT = 11,
 	COMPACT_AGGRESSIVE= 12,
 	COMPACT_PAGE = 13,
-	COMPACT_MICRO_FRAG = 14
+	COMPACT_MICRO_FRAG = 14,
+	COMPACT_RASDUMP = 15
 } CompactReason;
 
 typedef enum {
@@ -464,7 +465,8 @@ typedef enum {
 typedef enum {
 	FIXUP_NONE = 0,
 	FIXUP_CLASS_UNLOADING,
-	FIXUP_DEBUG_TOOLING
+	FIXUP_DEBUG_TOOLING,
+	FIXUP_AND_CLEAR_HEAP
 } FixUpReason;
 
 typedef enum {

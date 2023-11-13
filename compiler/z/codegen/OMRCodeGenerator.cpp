@@ -502,9 +502,20 @@ OMR::Z::CodeGenerator::initialize()
       {
       cg->setSupportsArraySet();
       }
-   cg->setSupportsArrayCmp();
-   cg->setSupportsArrayCmpLen();
-   cg->setSupportsArrayCmpSign();
+   if (!TR::Compiler->om.canGenerateArraylets())
+      {
+      static const bool disableArrayCmp = feGetEnv("TR_DisableArrayCmp") != NULL;
+      if (!disableArrayCmp)
+         {
+         cg->setSupportsArrayCmp();
+         cg->setSupportsArrayCmpSign();
+         }
+      static const bool disableArrayCmpLen = feGetEnv("TR_DisableArrayCmpLen") != NULL;
+      if (!disableArrayCmpLen)
+         {
+         cg->setSupportsArrayCmpLen();
+         }
+      }
    if (!comp->compileRelocatableCode())
       {
       cg->setSupportsArrayTranslateTRxx();
@@ -4782,6 +4793,8 @@ bool OMR::Z::CodeGenerator::getSupportsOpCodeForAutoSIMD(TR::CPU *cpu, TR::ILOpC
       case TR::vxor:
       case TR::vor:
       case TR::vand:
+      case TR::vnotz:
+      case TR::vnolz:
          if (et == TR::Int8 || et == TR::Int16 || et == TR::Int32 || et == TR::Int64)
             return true;
          else

@@ -279,6 +279,8 @@ MM_VerboseHandlerOutput::getHeapFixupReasonString(uintptr_t reason)
 			return "class unloading";
 		case FIXUP_DEBUG_TOOLING:
 			return "debug tooling";
+		case FIXUP_AND_CLEAR_HEAP:
+			return "fixup and clear heap";
 		default:
 			return "unknown";
 	}
@@ -362,6 +364,7 @@ MM_VerboseHandlerOutput::outputInitializedStanza(MM_EnvironmentBase *env, MM_Ver
 	buffer->formatAndOutput(env, 1, "<system>");
 	buffer->formatAndOutput(env, 2, "<attribute name=\"physicalMemory\" value=\"%llu\" />", omrsysinfo_get_physical_memory());
 	buffer->formatAndOutput(env, 2, "<attribute name=\"numCPUs\" value=\"%zu\" />", omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_ONLINE));
+	buffer->formatAndOutput(env, 2, "<attribute name=\"numCPUs active\" value=\"%zu\" />", omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET));
 	buffer->formatAndOutput(env, 2, "<attribute name=\"architecture\" value=\"%s\" />", omrsysinfo_get_CPU_architecture());
 	buffer->formatAndOutput(env, 2, "<attribute name=\"os\" value=\"%s\" />", omrsysinfo_get_OS_type());
 	buffer->formatAndOutput(env, 2, "<attribute name=\"osVersion\" value=\"%s\" />", omrsysinfo_get_OS_version());
@@ -597,8 +600,12 @@ MM_VerboseHandlerOutput::handleExclusiveStart(J9HookInterface** hook, uintptr_t 
 	manager->setLastExclusiveAccessStartTime(currentTime);
 
 	OMR_VMThread* lastResponder = event->lastResponder;
-	char escapedLastResponderName[64];
-	getThreadName(escapedLastResponderName,sizeof(escapedLastResponderName),lastResponder);
+	char escapedLastResponderName[64] = "";
+
+	/* Last Responder thread can be passed NULL in the case of Safe Point Exclusive */
+	if (NULL != lastResponder) {
+		getThreadName(escapedLastResponderName, sizeof(escapedLastResponderName), lastResponder);
+	}
 
 	char tagTemplate[200];
 	getTagTemplate(tagTemplate, sizeof(tagTemplate), manager->getIdAndIncrement(), omrtime_current_time_millis());
@@ -607,8 +614,12 @@ MM_VerboseHandlerOutput::handleExclusiveStart(J9HookInterface** hook, uintptr_t 
 		writer->formatAndOutput(env, 0, "<warning details=\"clock error detected, following timing may be inaccurate\" />");
 	}	
 	writer->formatAndOutput(env, 0, "<exclusive-start %s intervalms=\"%llu.%03.3llu\">", tagTemplate, deltaTime / 1000, deltaTime % 1000);
-	writer->formatAndOutput(env, 1, "<response-info timems=\"%llu.%03.3llu\" idlems=\"%llu.%03.3llu\" threads=\"%zu\" lastid=\"%p\" lastname=\"%s\" />",
-			exclusiveAccessTime / 1000, exclusiveAccessTime % 1000, meanIdleTime / 1000, meanIdleTime % 1000, event->haltedThreads, (NULL == lastResponder ? NULL : lastResponder->_language_vmthread), escapedLastResponderName);
+
+	writer->formatAndOutput(
+		env, 1, "<response-info timems=\"%llu.%03.3llu\" idlems=\"%llu.%03.3llu\" threads=\"%zu\" lastid=\"%p\" lastname=\"%s\" />",
+		exclusiveAccessTime / 1000, exclusiveAccessTime % 1000, meanIdleTime / 1000, meanIdleTime % 1000, event->haltedThreads,
+		(NULL == lastResponder ? NULL : lastResponder->_language_vmthread), escapedLastResponderName);
+
 	writer->formatAndOutput(env, 0, "</exclusive-start>");
 	writer->flush(env);
 	exitAtomicReportingBlock();

@@ -225,8 +225,20 @@ OMR::Power::CodeGenerator::initialize()
        {
        cg->setSupportsArraySet();
        }
-    cg->setSupportsArrayCmp();
-    cg->setSupportsArrayCmpLen();
+
+   if (!TR::Compiler->om.canGenerateArraylets())
+      {
+      static const bool disableArrayCmp = feGetEnv("TR_DisableArrayCmp") != NULL;
+      if (!disableArrayCmp)
+         {
+         cg->setSupportsArrayCmp();
+         }
+      static const bool disableArrayCmpLen = feGetEnv("TR_DisableArrayCmpLen") != NULL;
+      if (!disableArrayCmpLen)
+         {
+         cg->setSupportsArrayCmpLen();
+         }
+      }
 
     if (comp->target().cpu.supportsFeature(OMR_FEATURE_PPC_HAS_VSX))
        {
@@ -2436,6 +2448,8 @@ OMR::Power::CodeGenerator::supportsNonHelper(TR::SymbolReferenceTable::CommonNon
          result = self()->comp()->target().is64Bit();
          break;
          }
+      default:
+         break;
       }
 
    return result;

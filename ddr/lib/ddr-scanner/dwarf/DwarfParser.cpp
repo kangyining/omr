@@ -470,6 +470,7 @@ static const pair<const char *, Dwarf_Half> tagStrings[] = {
 	make_pair("namespace", DW_TAG_namespace),
 	make_pair("pointer_type", DW_TAG_pointer_type),
 	make_pair("ptr_to_member_type", DW_TAG_ptr_to_member_type),
+	make_pair("reference_type", DW_TAG_reference_type),
 	make_pair("restrict_type", DW_TAG_restrict_type),
 	make_pair("shared_type", DW_TAG_shared_type),
 	make_pair("structure_type", DW_TAG_structure_type),
@@ -478,6 +479,7 @@ static const pair<const char *, Dwarf_Half> tagStrings[] = {
 	make_pair("subroutine_type", DW_TAG_subroutine_type),
 	make_pair("typedef", DW_TAG_typedef),
 	make_pair("union_type", DW_TAG_union_type),
+	make_pair("unspecified_type", DW_TAG_unspecified_type),
 	make_pair("volatile_type", DW_TAG_volatile_type),
 };
 
@@ -500,7 +502,7 @@ parseAttribute(char *line, Dwarf_Die *lastCreatedDie,
 	int ret = DW_DLV_OK;
 
 	/* Get the type and form of the attribute. */
-	Dwarf_Half type = DW_TAG_unknown;
+	Dwarf_Half type = DW_AT_unknown;
 	Dwarf_Half form = DW_FORM_unknown;
 	size_t span = strcspn(line, "\t (");
 
