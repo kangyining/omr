@@ -271,14 +271,15 @@ MM_ConfigurationGenerational::calculateDefaultRegionSize(MM_EnvironmentBase *env
 	return regionSize;
 }
 
-void
+bool
 MM_ConfigurationGenerational::initializeGCThreadCount(MM_EnvironmentBase* env)
 {
-	MM_Configuration::initializeGCThreadCount(env);
+	bool result = MM_Configuration::initializeGCThreadCount(env);
 
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)
 	initializeConcurrentScavengerThreadCount(env);
 #endif /* defined(OMR_GC_CONCURRENT_SCAVENGER) */
+	return result;
 }
 
 #if defined(OMR_GC_CONCURRENT_SCAVENGER)

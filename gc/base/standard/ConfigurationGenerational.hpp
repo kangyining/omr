@@ -99,7 +99,7 @@ protected:
 	 * @param[in] env the current environment.
 	 * @return void
 	 */
-	virtual void initializeGCThreadCount(MM_EnvironmentBase* env);
+	virtual bool initializeGCThreadCount(MM_EnvironmentBase* env);
 private:
 	uintptr_t calculateDefaultRegionSize(MM_EnvironmentBase *env);
 

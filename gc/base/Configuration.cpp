@@ -70,10 +70,14 @@ MM_Configuration::initialize(MM_EnvironmentBase* env)
 				extensions->excessiveGCEnabled._valueSpecified = true;
 			}
 			if (initializeNUMAManager(env)) {
-				initializeGCThreadCount(env);
+				bool checkpoint = initializeGCThreadCount(env);
+				if (!checkpoint) {
+					return false;
+				}
 				initializeGCParameters(env);
 				extensions->_lightweightNonReentrantLockPool = pool_new(sizeof(J9ThreadMonitorTracing), 0, 0, 0, OMR_GET_CALLSITE(), OMRMEM_CATEGORY_MM, POOL_FOR_PORT(env->getPortLibrary()));
 				result = (NULL != extensions->_lightweightNonReentrantLockPool);
+				
 			}
 		}
 	}
@@ -442,14 +446,20 @@ MM_Configuration::initializeArrayletLeafSize(MM_EnvironmentBase* env)
 	return result;
 }
 
-void
+bool
 MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 {
+	OMRPORT_ACCESS_FROM_OMRPORT(env->getPortLibrary());
 	MM_GCExtensionsBase* extensions = env->getExtensions();
 
 	if (!extensions->gcThreadCountSpecified) {
 		extensions->gcThreadCount = defaultGCThreadCount(env);
+		if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
+			omrtty_printf("ILLEGAL ACTION!\n");
+			return false;
+		}
 	}
+	return true;
 }
 
 uintptr_t

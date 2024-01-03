@@ -152,7 +152,7 @@ public:
 	 *
 	 * @param env[in] - the current environment
 	 */
-	virtual void initializeGCThreadCount(MM_EnvironmentBase* env);
+	virtual bool initializeGCThreadCount(MM_EnvironmentBase* env);
 
 	/**
 	 * Initialize GC parameters that are uninitialized and dependent on the number of GC threads:
