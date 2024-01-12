@@ -222,7 +222,7 @@ MM_TLHAllocationSupport::refresh(MM_EnvironmentBase *env, MM_AllocateDescription
 #endif /* defined(OMR_GC_BATCH_CLEAR_TLH) */
 
 			/*
-			 * THL was refreshed however it might be already flushed in GC
+			 * TLH was refreshed however it might be already flushed in GC
 			 * Some special features (like Prepare Heap For Walk called by GC check)
 			 * might request flush of all TLHs
 			 * Flushed TLH would have Base=Top=Allocated=0, so getSize returns 0

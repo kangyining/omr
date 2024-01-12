@@ -131,6 +131,7 @@ public:
 	virtual void enableCachedAllocations(MM_EnvironmentBase* env) {};
 	virtual void disableCachedAllocations(MM_EnvironmentBase* env) {};
 	virtual bool cachedAllocationsEnabled(MM_EnvironmentBase* env) { return true; }
-	
+	virtual uintptr_t getTLHRefreshSize(MM_EnvironmentBase* env) { return 0; }
+	virtual uintptr_t getTLHRemainingSize(MM_EnvironmentBase* env) { return 0; }
 };
 #endif /* OBJECTALLOCATIONINTERFACE_HPP_ */

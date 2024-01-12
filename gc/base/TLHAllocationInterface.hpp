@@ -82,6 +82,8 @@ public:
 	virtual void enableCachedAllocations(MM_EnvironmentBase* env) { _cachedAllocationsEnabled = true; }
 	virtual void disableCachedAllocations(MM_EnvironmentBase* env) { _cachedAllocationsEnabled = false; };
 	virtual bool cachedAllocationsEnabled(MM_EnvironmentBase* env) { return _cachedAllocationsEnabled; }
+	virtual uintptr_t getTLHRefreshSize(MM_EnvironmentBase* env) { return _tlhAllocationSupport.getRefreshSize(); }
+	virtual uintptr_t getTLHRemainingSize(MM_EnvironmentBase* env) { return _tlhAllocationSupport.getSize(); }
 
 protected:
 	virtual bool initialize(MM_EnvironmentBase *env);

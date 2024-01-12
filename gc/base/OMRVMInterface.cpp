@@ -39,6 +39,7 @@
 #include "SublistIterator.hpp"
 #include "SublistSlotIterator.hpp"
 #include "Task.hpp"
+#include "TLHAllocationSupport.hpp"
 
 extern "C" {
 
@@ -112,26 +113,31 @@ GC_OMRVMInterface::flushCachesForWalk(OMR_VM* omrVM)
 void
 GC_OMRVMInterface::flushCachesForGC(MM_EnvironmentBase *env)
 {
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
 	OMR_VMThread *omrVMThread;
 	UDATA allocatedBytesMax = extensions->bytesAllocatedMost;
 	OMR_VMThread *vmThreadMax = extensions->vmThreadAllocatedMost;
 
 	GC_OMRVMThreadListIterator threadListIterator(env->getOmrVM());
-
+	omrtty_printf("Begin of thread stats report.\n");
 	while((omrVMThread = threadListIterator.nextOMRVMThread()) != NULL) {
 		/* Grab allocation bytes stats per-thread before they're cleared */
 		MM_EnvironmentBase* threadEnv = MM_EnvironmentBase::getEnvironment(omrVMThread);
 		MM_AllocationStats * stats= threadEnv->_objectAllocationInterface->getAllocationStats();
 		UDATA allocatedBytes = stats->bytesAllocated();
-
+		if (MUTATOR_THREAD == threadEnv->getThreadType()) {
+			omrtty_printf("%-50s %p cumulative refresh/discard bytes %llu/%llu = %f, current refresh/remaining bytes %llu/%llu\n", getOMRVMThreadName(omrVMThread), omrVMThread, stats->_tlhAllocatedFresh, stats->_tlhDiscardedBytes, (float)stats->_tlhAllocatedFresh/stats->_tlhDiscardedBytes ,threadEnv->_objectAllocationInterface->getTLHRefreshSize(threadEnv), threadEnv->_objectAllocationInterface->getTLHRemainingSize(threadEnv));
+		}
+		
+		releaseOMRVMThreadName(omrVMThread);
 		if(allocatedBytes >= allocatedBytesMax){
 			allocatedBytesMax = allocatedBytes;
 			vmThreadMax = omrVMThread;
 		}
 		GC_OMRVMThreadInterface::flushCachesForGC(threadEnv);
 	}
-
+	omrtty_printf("End of thread stats report.\n");
 	extensions->bytesAllocatedMost = allocatedBytesMax;
 	extensions->vmThreadAllocatedMost = vmThreadMax;
 }
