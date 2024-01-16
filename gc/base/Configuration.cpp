@@ -454,10 +454,10 @@ MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 
 	if (!extensions->gcThreadCountSpecified) {
 		extensions->gcThreadCount = defaultGCThreadCount(env);
-		if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
-			omrtty_printf("ILLEGAL ACTION!\n");
-			return false;
-		}
+	}
+	if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
+		omrtty_printf("CheckpointGCThreadCount cannot be smaller than gcThreadCount. \n");
+		return false;
 	}
 	return true;
 }
