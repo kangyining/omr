@@ -77,7 +77,6 @@ MM_Configuration::initialize(MM_EnvironmentBase* env)
 				initializeGCParameters(env);
 				extensions->_lightweightNonReentrantLockPool = pool_new(sizeof(J9ThreadMonitorTracing), 0, 0, 0, OMR_GET_CALLSITE(), OMRMEM_CATEGORY_MM, POOL_FOR_PORT(env->getPortLibrary()));
 				result = (NULL != extensions->_lightweightNonReentrantLockPool);
-				
 			}
 		}
 	}
