@@ -454,10 +454,12 @@ MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 	if (!extensions->gcThreadCountSpecified) {
 		extensions->gcThreadCount = defaultGCThreadCount(env);
 	}
-	if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
-		omrtty_printf("CheckpointGCThreadCount cannot be smaller than gcThreadCount.\n");
-		return false;
-	}
+	#if defined(J9VM_OPT_CRIU_SUPPORT)
+		if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
+			omrtty_printf("CheckpointGCThreadCount cannot be smaller than gcThreadCount.\n");
+			return false;
+		}
+	#endif /* defined(J9VM_OPT_CRIU_SUPPORT) */
 	return true;
 }
 
