@@ -448,13 +448,13 @@ MM_Configuration::initializeArrayletLeafSize(MM_EnvironmentBase* env)
 bool
 MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 {
-	OMRPORT_ACCESS_FROM_OMRPORT(env->getPortLibrary());
 	MM_GCExtensionsBase* extensions = env->getExtensions();
 
 	if (!extensions->gcThreadCountSpecified) {
 		extensions->gcThreadCount = defaultGCThreadCount(env);
 	}
 	#if defined(J9VM_OPT_CRIU_SUPPORT)
+		OMRPORT_ACCESS_FROM_OMRPORT(env->getPortLibrary());
 		if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
 			omrtty_printf("CheckpointGCThreadCount cannot be smaller than gcThreadCount.\n");
 			return false;
