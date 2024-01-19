@@ -1128,6 +1128,7 @@ reserve_memory_with_mmap(struct OMRPortLibrary *portLibrary, void *address, uint
 	int protectionFlags = PROT_NONE;
 	BOOLEAN useBackingFile = FALSE;
 	BOOLEAN useBackingSharedFile = FALSE;
+	BOOLEAN useBackingSharedTmpFile =  FALSE;
 	BOOLEAN areHugePagesEnabled = FALSE;
 
 	Trc_PRT_vmem_reserve_entry(address, byteAmount);
@@ -1135,6 +1136,9 @@ reserve_memory_with_mmap(struct OMRPortLibrary *portLibrary, void *address, uint
 	if (0 != (mode & OMRPORT_VMEM_MEMORY_MODE_SHARE_FILE_OPEN)) {
 		flags |= MAP_SHARED;
 		useBackingSharedFile = TRUE;
+	} else if (0 != (mode & OMRPORT_VMEM_MEMORY_MODE_SHARE_TMP_FILE_OPEN)) {
+		flags |= MAP_SHARED;
+		useBackingSharedTmpFile = TRUE;
 	} else {
 		useBackingFile = set_flags_for_mmap(&flags);
 	}
@@ -1174,12 +1178,26 @@ reserve_memory_with_mmap(struct OMRPortLibrary *portLibrary, void *address, uint
 			useBackingSharedFile = FALSE;
 			Trc_PRT_vmem_reserve_doubleMapAPI_not_available(address, byteAmount);
 		}
+	} else if (useBackingSharedTmpFile) {
+		//fd = open("/tmp", O_TMPFILE|O_RDWR|O_EXCL, S_IRUSR|S_IWUSR);
+		char *tempFileName = strdup("/tmp/tempfileXXXXXX");
+		fd = mkostemp(tempFileName, O_RDWR|O_EXCL|O_CREAT);
+		if (OMRPORT_INVALID_FD == fd) {
+			fprintf(stderr, "Cannot open temporary file for mmap\n");
+		} else {
+			unlink(tempFileName);
+		}
+		/* set its size with ftruncate */
+		if (ftruncate(fd, byteAmount) == OMRPORT_INVALID_FD) {
+			perror("ftruncate");
+			return NULL;
+		}
 	} else if (useBackingFile) {
 		fd = portLibrary->file_open(portLibrary, "/dev/zero", EsOpenRead | EsOpenWrite, 0);
 	}
 
-	if (((OMRPORT_INVALID_FD == fd) && (!useBackingSharedFile && !useBackingFile)) ||
-	   ((OMRPORT_INVALID_FD != fd) && (useBackingSharedFile || useBackingFile))) {
+	if (((OMRPORT_INVALID_FD == fd) && (!useBackingSharedFile && !useBackingSharedTmpFile && !useBackingFile)) ||
+	   ((OMRPORT_INVALID_FD != fd) && (useBackingSharedFile || useBackingSharedTmpFile || useBackingFile))) {
 
 		if ((0 != (OMRPORT_VMEM_MEMORY_MODE_COMMIT & mode)) || areHugePagesEnabled) {
 			protectionFlags = get_protectionBits(mode);
@@ -1197,14 +1215,15 @@ reserve_memory_with_mmap(struct OMRPortLibrary *portLibrary, void *address, uint
 		}
 
 		if (MAP_FAILED == result) {
-			if (useBackingSharedFile && (OMRPORT_INVALID_FD != fd)) {
+			if ((useBackingSharedFile || useBackingSharedTmpFile) && (OMRPORT_INVALID_FD != fd)) {
 				close(fd);
+				fprintf(stderr, "Cannot mmap shared file\n");
 			}
 			result = NULL;
 		} else {
 			/* Update identifier and commit memory if required, else return reserved memory */
 			uintptr_t allocator = OMRPORT_VMEM_RESERVE_USED_MMAP;
-			if (useBackingSharedFile) {
+			if (useBackingSharedFile || useBackingSharedTmpFile) {
 				allocator = OMRPORT_VMEM_RESERVE_USED_MMAP_SHM;
 			}
 			update_vmemIdentifier(identifier, result, result, byteAmount, mode, pageSize, OMRPORT_VMEM_PAGE_FLAG_NOT_USED, allocator, category, fd);
@@ -1214,6 +1233,7 @@ reserve_memory_with_mmap(struct OMRPortLibrary *portLibrary, void *address, uint
 					/* If the commit fails free the memory */
 					omrvmem_free_memory(portLibrary, result, byteAmount, identifier);
 					result = NULL;
+					fprintf(stderr, "Failed to commit memory\n");
 				}
 			}
 		}
