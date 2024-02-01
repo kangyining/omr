@@ -18,7 +18,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0 OR GPL-2.0-only WITH OpenJDK-assembly-exception-1.0
  *******************************************************************************/
-#ifdef J9ZTPF
+#ifdef OMRZTPF
 #define __TPF_DO_NOT_MAP_ATOE_REMOVE
 #endif
 
@@ -319,7 +319,7 @@ TR_InlinerBase::setInlineThresholds(TR::ResolvedMethodSymbol *callerSymbol)
 
    _callerWeightLimit -= size;
 
-   _nodeCountThreshold = 16000;
+   _nodeCountThreshold = comp()->getOption(TR_NotCompileTimeSensitive) ? 16000: 3000;
    _methodInWarmBlockByteCodeSizeThreshold = _methodByteCodeSizeThreshold = 155;
    _methodInColdBlockByteCodeSizeThreshold = 30;
    _maxInliningCallSites = 4095;
