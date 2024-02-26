@@ -65,7 +65,7 @@ MM_MemoryManager::createVirtualMemoryForHeap(MM_EnvironmentBase* env, MM_MemoryH
 	MM_GCExtensionsBase* extensions = env->getExtensions();
 
 	MM_VirtualMemory* instance = NULL;
-	uintptr_t mode = (OMRPORT_VMEM_MEMORY_MODE_READ | OMRPORT_VMEM_MEMORY_MODE_WRITE);
+	uintptr_t mode = (OMRPORT_VMEM_MEMORY_MODE_READ | OMRPORT_VMEM_MEMORY_MODE_WRITE | OMRPORT_VMEM_MEMORY_MODE_SHARE_TMP_FILE_OPEN);
 	uintptr_t options = 0;
 	uint32_t memoryCategory = OMRMEM_CATEGORY_MM_RUNTIME_HEAP;
 
