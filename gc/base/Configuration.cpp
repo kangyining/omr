@@ -453,14 +453,9 @@ MM_Configuration::initializeGCThreadCount(MM_EnvironmentBase* env)
 	if (!extensions->gcThreadCountSpecified) {
 		extensions->gcThreadCount = defaultGCThreadCount(env);
 	}
-	#if defined(J9VM_OPT_CRIU_SUPPORT)
-		OMRPORT_ACCESS_FROM_OMRPORT(env->getPortLibrary());
-		if (extensions->gcThreadCount < extensions->checkpointGCthreadCount) {
-			omrtty_printf("CheckpointGCThreadCount cannot be smaller than gcThreadCount.\n");
-			return false;
-		}
-	#endif /* defined(J9VM_OPT_CRIU_SUPPORT) */
-	return true;
+#if defined(J9VM_OPT_CRIU_SUPPORT)
+	_delegate.checkPointGCThreadCountVerifyAndAdjust(env);
+#endif /* defined(J9VM_OPT_CRIU_SUPPORT) */
 }
 
 uintptr_t

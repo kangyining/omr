@@ -4240,6 +4240,9 @@ MM_Scavenger::mainThreadGarbageCollect(MM_EnvironmentBase *envBase, MM_AllocateD
 	bool firstIncrement = true;
 #endif
 
+	/* Flush any VM level changes to prepare for a safe slot walk */
+	GC_OMRVMInterface::flushCachesForGC(env);
+
 	if (firstIncrement)	{
 		if (_extensions->processLargeAllocateStats) {
 			processLargeAllocateStatsBeforeGC(env);
@@ -4248,6 +4251,14 @@ MM_Scavenger::mainThreadGarbageCollect(MM_EnvironmentBase *envBase, MM_AllocateD
 		reportGCCycleStart(env);
 		_cycleTimes.cycleStart = omrtime_hires_clock();
 		mainSetupForGC(env);
+
+		/* Restart the allocation caches associated to all threads */
+		GC_OMRVMThreadListIterator threadListIterator(_omrVM);
+		OMR_VMThread *walkThread = NULL;
+		while ((walkThread = threadListIterator.nextOMRVMThread()) != NULL) {
+			MM_EnvironmentBase *walkEnv = MM_EnvironmentBase::getEnvironment(walkThread);
+			walkEnv->_objectAllocationInterface->restartCache(env);
+		}
 	}
 	clearIncrementGCStats(env, firstIncrement);
 	reportGCStart(env);
@@ -4330,16 +4341,6 @@ MM_Scavenger::mainThreadGarbageCollect(MM_EnvironmentBase *envBase, MM_AllocateD
 		_evacuateMemorySubSpace = _activeSubSpace->getMemorySubSpaceSurvivor();
 		_activeSubSpace->cacheRanges(_evacuateMemorySubSpace, &_evacuateSpaceBase, &_evacuateSpaceTop);
 #endif
-		/* Restart the allocation caches associated to all threads */
-		{
-			GC_OMRVMThreadListIterator threadListIterator(_omrVM);
-			OMR_VMThread *walkThread;
-			while((walkThread = threadListIterator.nextOMRVMThread()) != NULL) {
-				MM_EnvironmentBase *walkEnv = MM_EnvironmentBase::getEnvironment(walkThread);
-				walkEnv->_objectAllocationInterface->restartCache(env);
-			}
-		}
-
 		_extensions->heap->resetHeapStatistics(false);
 
 		/* If there was a failed tenure of a size greater than the threshold, set the flag. */
@@ -4582,9 +4583,6 @@ MM_Scavenger::internalPreCollect(MM_EnvironmentBase *env, MM_MemorySubSpace *sub
 			}
 		}
 	}
-
-	/* Flush any VM level changes to prepare for a safe slot walk */
-	GC_OMRVMInterface::flushCachesForGC(env);
 }
 
 /**
