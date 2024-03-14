@@ -4966,8 +4966,20 @@ MM_Scavenger::reportGCIncrementStart(MM_EnvironmentStandard *env)
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
 	stats->_startTime = omrtime_hires_clock();
-
+	J9SysinfoCPUTime cpuTimeStart;
 	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
+	omrtty_printf("scavenger difference process user time: %llu\n",stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000);
+	omrtty_printf("scavenger difference process system time: %llu\n",stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000);
+	omrtty_printf("scavenger difference cpu time: %llu\n", cpuTimeStart.cpuTime/1000000 - _extensions->cpustats.prev_cpuTime);
+	_extensions->cpustats.sum_user += stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000;
+	_extensions->cpustats.sum_system += stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000;
+	omrtty_printf("user time sum till now: %llu\n", _extensions->cpustats.sum_user);
+	omrtty_printf("system time sum till now: %llu\n\n\n", _extensions->cpustats.sum_system);
+
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
@@ -4994,8 +5006,17 @@ MM_Scavenger::reportGCIncrementEnd(MM_EnvironmentStandard *env)
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
-
+	J9SysinfoCPUTime cpuTimeEnd;
 	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
+	// omrtty_printf("difference this cycle process user time: %llu\n",stats->_endProcessTimes._userTime - stats->_startProcessTimes._userTime);
+	// omrtty_printf("difference this cycle process system time: %llu\n",stats->_endProcessTimes._systemTime - stats->_startProcessTimes._systemTime);
+	// omrtty_printf("difference this cycle cpu time: %llu\n", cpuTimeEnd.cpuTime - _extensions->cpustats.prev_cpuTime);
+	_extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/1000000;
+	
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
