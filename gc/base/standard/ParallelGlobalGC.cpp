@@ -1718,6 +1718,7 @@ MM_ParallelGlobalGC::reportGCIncrementStart(MM_EnvironmentBase *env)
 	stats->_startTime = omrtime_hires_clock();
 
 	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
+	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes, stats->_endProcessTimes);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
@@ -1746,6 +1747,7 @@ MM_ParallelGlobalGC::reportGCIncrementEnd(MM_EnvironmentBase *env)
 	stats->collectCollectionStatistics(env, stats);
 	
 	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
+	recordProcessAndCpuUtilization(env);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */

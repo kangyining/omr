@@ -585,3 +585,47 @@ MM_Collector::notifyAcquireExclusiveVMAccess(MM_EnvironmentBase *env)
 		env->getExtensions()->getGlobalCollector()->notifyAcquireExclusiveVMAccess(env);
 	}
 }
+
+void
+MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env)
+{
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	MM_GCExtensionsBase *extensions = env->getExtensions();
+	J9SysinfoCPUTime cpuTimeEnd;
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
+	extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/1000000;
+	extensions->cpustats.prev_idleTime = cpuTimeEnd.idleTime/1000000;
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
+}
+
+void
+MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, omrthread_process_time_t endTime)
+{
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	MM_GCExtensionsBase *extensions = env->getExtensions();
+	J9SysinfoCPUTime cpuTimeStart;
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
+	int64_t diffSumTime = startTime._systemTime/1000000 - endTime._systemTime/1000000 + startTime._userTime/1000000 - endTime._userTime/1000000;
+	omrtty_printf("current process system + user time: %llu\n", diffSumTime);
+	extensions->cpustats.weighted_avg_sumTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_sumTime, diffSumTime, 0.9f);
+	if (0 < extensions->cpustats.prev_cpuTime) {
+		omrtty_printf("current cpu time: %llu\n", cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime);
+		extensions->cpustats.weighted_avg_cpuTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuTime, cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime, 0.9f);
+	}
+	if (0 < extensions->cpustats.prev_idleTime) {
+		omrtty_printf("current cpu idle time: %llu\n", cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime);
+		extensions->cpustats.weighted_avg_idleTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_idleTime, cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime, 0.9f);
+	}
+	omrtty_printf("average process system + user time: %llu\n", extensions->cpustats.weighted_avg_sumTime);
+	if (0 < extensions->cpustats.prev_cpuTime) {
+		omrtty_printf("average cpu time: %llu\n", extensions->cpustats.weighted_avg_cpuTime);
+	}
+	if (0 < extensions->cpustats.prev_idleTime) {
+		omrtty_printf("average cpu idle time: %llu\n\n", extensions->cpustats.weighted_avg_idleTime);
+	}
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
+}

@@ -300,7 +300,8 @@ public:
 	 * @return pointer to collector/phase specific concurrent stats structure
 	 */
 	virtual MM_ConcurrentPhaseStatsBase *getConcurrentPhaseStats() { return NULL; }
-	
+	virtual void recordProcessAndCpuUtilization(MM_EnvironmentBase *env);
+	virtual void calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, omrthread_process_time_t endTime);
 	MM_Collector()
 		: MM_BaseVirtual()
 		, _exclusiveAccessCount(0)
