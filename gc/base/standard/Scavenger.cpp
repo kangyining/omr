@@ -4969,13 +4969,21 @@ MM_Scavenger::reportGCIncrementStart(MM_EnvironmentStandard *env)
 	J9SysinfoCPUTime cpuTimeStart;
 	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
 	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
-	omrtty_printf("scavenger difference process user time: %llu\n",stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000);
-	omrtty_printf("scavenger difference process system time: %llu\n",stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000);
-	omrtty_printf("scavenger difference cpu time: %llu\n", cpuTimeStart.cpuTime/1000000 - _extensions->cpustats.prev_cpuTime);
-	_extensions->cpustats.sum_user += stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000;
-	_extensions->cpustats.sum_system += stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000;
-	omrtty_printf("user time sum till now: %llu\n", _extensions->cpustats.sum_user);
-	omrtty_printf("system time sum till now: %llu\n\n\n", _extensions->cpustats.sum_system);
+	
+	int64_t diffSumTime = stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000 + stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000;
+	omrtty_printf("current process system + user time: %llu\n",stats->_startProcessTimes._systemTime/1000000 - stats->_endProcessTimes._systemTime/1000000 + stats->_startProcessTimes._userTime/1000000 - stats->_endProcessTimes._userTime/1000000);
+	_extensions->cpustats.weighted_avg_sumTime = MM_Math::weightedAverage(_extensions->cpustats.weighted_avg_sumTime, diffSumTime, 0.9f);
+	omrtty_printf("average process system + user time: %llu\n", _extensions->cpustats.weighted_avg_sumTime);
+	if (0 < _extensions->cpustats.prev_cpuTime) {
+		omrtty_printf("current cpu time: %llu\n", cpuTimeStart.cpuTime/1000000 - _extensions->cpustats.prev_cpuTime);
+		_extensions->cpustats.weighted_avg_cpuTime = MM_Math::weightedAverage(_extensions->cpustats.weighted_avg_cpuTime, cpuTimeStart.cpuTime/1000000 - _extensions->cpustats.prev_cpuTime, 0.9f);
+		omrtty_printf("average cpu time: %llu\n", _extensions->cpustats.weighted_avg_cpuTime);
+	}
+	if (0 < _extensions->cpustats.prev_idleTime) {
+		omrtty_printf("current cpu idle time: %llu\n", cpuTimeStart.idleTime/1000000 - _extensions->cpustats.prev_idleTime);
+		_extensions->cpustats.weighted_avg_idleTime = MM_Math::weightedAverage(_extensions->cpustats.weighted_avg_idleTime, cpuTimeStart.idleTime/1000000 - _extensions->cpustats.prev_idleTime, 0.9f);
+		omrtty_printf("average cpu idle time: %llu\n\n", _extensions->cpustats.weighted_avg_idleTime);
+	}
 
 	if (portLibraryStatus < 0) {
 		omrtty_printf("ERROR\n");
@@ -5013,7 +5021,7 @@ MM_Scavenger::reportGCIncrementEnd(MM_EnvironmentStandard *env)
 	// omrtty_printf("difference this cycle process system time: %llu\n",stats->_endProcessTimes._systemTime - stats->_startProcessTimes._systemTime);
 	// omrtty_printf("difference this cycle cpu time: %llu\n", cpuTimeEnd.cpuTime - _extensions->cpustats.prev_cpuTime);
 	_extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/1000000;
-	
+	_extensions->cpustats.prev_idleTime = cpuTimeEnd.idleTime/1000000;
 	if (portLibraryStatus < 0) {
 		omrtty_printf("ERROR\n");
 	}

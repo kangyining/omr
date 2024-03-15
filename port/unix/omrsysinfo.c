@@ -4577,14 +4577,18 @@ omrsysinfo_get_CPU_utilization(struct OMRPortLibrary *portLibrary, struct J9Sysi
 		int64_t userTime = 0;
 		int64_t niceTime = 0;
 		int64_t systemTime = 0;
+		int64_t idleTime = 0;
 
 		buf[bytesRead] = '\0';
 		Trc_PRT_sysinfo_get_CPU_utilization_proc_stat_summary(buf);
-		if (0 == sscanf(buf, "cpu  %" SCNd64 " %" SCNd64 " %" SCNd64, &userTime, &niceTime, &systemTime)) {
+		if (0 == sscanf(buf, "cpu  %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64, &userTime, &niceTime, &systemTime, &idleTime)) {
 			return OMRPORT_ERROR_SYSINFO_GET_STATS_FAILED;
 		}
+		// printf("cpu info: %s\n", buf);
 		cpuTime->cpuTime = (userTime + niceTime + systemTime) * NS_PER_CLK;
 		cpuTime->numberOfCpus = portLibrary->sysinfo_get_number_CPUs_by_type(portLibrary, OMRPORT_CPU_ONLINE);
+		cpuTime->idleTime = idleTime * NS_PER_CLK;
+		// printf("cpu idle time: %lu\n", idleTime);
 		status = 0;
 	}
 #elif defined(OSX)
