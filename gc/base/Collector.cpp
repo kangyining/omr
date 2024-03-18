@@ -595,6 +595,7 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env)
 	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
 	extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/1000000;
 	extensions->cpustats.prev_idleTime = cpuTimeEnd.idleTime/1000000;
+	extensions->cpustats.prev_elapsedTime = cpuTimeEnd.elapsedTime/1000000;
 	if (portLibraryStatus < 0) {
 		omrtty_printf("ERROR\n");
 	}
@@ -614,16 +615,30 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, om
 		omrtty_printf("current cpu time: %llu\n", cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime);
 		extensions->cpustats.weighted_avg_cpuTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuTime, cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime, 0.9f);
 	}
-	if (0 < extensions->cpustats.prev_idleTime) {
-		omrtty_printf("current cpu idle time: %llu\n", cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime);
-		extensions->cpustats.weighted_avg_idleTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_idleTime, cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime, 0.9f);
+	// if (0 < extensions->cpustats.prev_idleTime) {
+	// 	omrtty_printf("current cpu idle time: %llu\n", cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime);
+	// 	extensions->cpustats.weighted_avg_idleTime = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_idleTime, cpuTimeStart.idleTime/1000000 - extensions->cpustats.prev_idleTime, 0.9f);
+	// }
+	if (0 < extensions->cpustats.prev_elapsedTime) {
+		omrtty_printf("current cpu utilization percentage: %f\n", (double)(cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime)/(cpuTimeStart.elapsedTime/1000000 - extensions->cpustats.prev_elapsedTime));
+		extensions->cpustats.weighted_avg_cpuUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuUtil, (double)(cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime)/(cpuTimeStart.elapsedTime/1000000 - extensions->cpustats.prev_elapsedTime), 0.9);
+	}
+	if (0 < extensions->cpustats.prev_cpuTime) {
+		omrtty_printf("current process utilization percentage: %f\n", (double)(diffSumTime)/(cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime));
+		extensions->cpustats.weighted_avg_procUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_procUtil, (double)(diffSumTime)/(cpuTimeStart.cpuTime/1000000 - extensions->cpustats.prev_cpuTime), 0.9);
 	}
 	omrtty_printf("average process system + user time: %llu\n", extensions->cpustats.weighted_avg_sumTime);
 	if (0 < extensions->cpustats.prev_cpuTime) {
 		omrtty_printf("average cpu time: %llu\n", extensions->cpustats.weighted_avg_cpuTime);
 	}
-	if (0 < extensions->cpustats.prev_idleTime) {
-		omrtty_printf("average cpu idle time: %llu\n\n", extensions->cpustats.weighted_avg_idleTime);
+	// if (0 < extensions->cpustats.prev_idleTime) {
+	// 	omrtty_printf("average cpu idle time: %llu\n", extensions->cpustats.weighted_avg_idleTime);
+	// }
+	if (0 < extensions->cpustats.prev_elapsedTime) {
+		omrtty_printf("average cpu utilization percentage: %.4f %%\n", extensions->cpustats.weighted_avg_cpuUtil*100);
+	}
+	if (0 < extensions->cpustats.prev_elapsedTime) {
+		omrtty_printf("average process utilization percentage: %.4f %%\n\n", extensions->cpustats.weighted_avg_procUtil*100);
 	}
 	if (portLibraryStatus < 0) {
 		omrtty_printf("ERROR\n");
