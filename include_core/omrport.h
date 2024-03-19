@@ -680,6 +680,7 @@ typedef struct J9SysinfoCPUTime {
 	int32_t numberOfCpus; /* number of CPUs as reported by the operating system */
 	int64_t idleTime;
 	int64_t elapsedTime;
+	char buf[128];
 } J9SysinfoCPUTime;
 
 /* Key memory categories are copied here for DDR access */
