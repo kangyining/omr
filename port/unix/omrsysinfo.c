@@ -4591,7 +4591,6 @@ omrsysinfo_get_CPU_utilization(struct OMRPortLibrary *portLibrary, struct J9Sysi
 		cpuTime->numberOfCpus = portLibrary->sysinfo_get_number_CPUs_by_type(portLibrary, OMRPORT_CPU_ONLINE);
 		cpuTime->idleTime = idleTime * NS_PER_CLK;
 		cpuTime->elapsedTime = (userTime + niceTime + systemTime + idleTime + iowaitTime + irqTime + softirqTime) * NS_PER_CLK;
-		// printf("cpu idle time: %lu\n", idleTime);
 		status = 0;
 	}
 #elif defined(OSX)

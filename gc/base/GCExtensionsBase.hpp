@@ -123,14 +123,19 @@ enum BackOutState {
 };
 
 struct cpuStats {
+	int64_t prev_userTime;
+	int64_t prev_systemTime;
 	int64_t prev_cpuTime;
-	int64_t prev_idleTime;
+	int64_t prev_elapsedTimeNew;
 	int64_t prev_elapsedTime;
-	int64_t weighted_avg_sumTime;
-	int64_t weighted_avg_cpuTime;
-	int64_t weighted_avg_idleTime;
+	double weighted_avg_interval;
+	// int64_t weighted_avg_sumTime;
+	// int64_t weighted_avg_cpuTime;
+	// int64_t weighted_avg_idleTime;
 	double weighted_avg_cpuUtil;
 	double weighted_avg_procUtil;
+	bool ifCpuDiff;
+
 };
 
 /* Note:  These should be templates if DDR ever supports them (JAZZ 40487) */

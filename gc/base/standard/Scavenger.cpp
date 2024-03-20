@@ -4967,7 +4967,7 @@ MM_Scavenger::reportGCIncrementStart(MM_EnvironmentStandard *env)
 	stats->collectCollectionStatistics(env, stats);
 	stats->_startTime = omrtime_hires_clock();
 	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
-	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes, stats->_endProcessTimes);
+	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
@@ -4995,7 +4995,7 @@ MM_Scavenger::reportGCIncrementEnd(MM_EnvironmentStandard *env)
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
 	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
-	recordProcessAndCpuUtilization(env);
+	recordProcessAndCpuUtilization(env, stats->_endProcessTimes);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
