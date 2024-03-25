@@ -587,7 +587,7 @@ MM_Collector::notifyAcquireExclusiveVMAccess(MM_EnvironmentBase *env)
 }
 
 void
-MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_process_time_t endTime)
+MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_process_time_t endTime, J9SysinfoCPUTime cpuTimeEnd)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
@@ -595,28 +595,21 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_
 	if (extensions->cpustats.ifCpuDiff) {
 		extensions->cpustats.prev_userTime = endTime._userTime/CONST_DIVIDER;
 		extensions->cpustats.prev_systemTime = endTime._systemTime/CONST_DIVIDER;
-		J9SysinfoCPUTime cpuTimeEnd;
-		intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
 		extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/CONST_DIVIDER;
 		extensions->cpustats.prev_elapsedTime = cpuTimeEnd.elapsedTime/CONST_DIVIDER;
 		extensions->cpustats.prev_elapsedTimeNew = omrtime_current_time_millis();
-		if (portLibraryStatus < 0) {
-			omrtty_printf("ERROR\n");
-		}
 	}
 	
 }
 
 void
-MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime)
+MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, J9SysinfoCPUTime cpuTimeStart)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
 	uint64_t CONST_DIVIDER = 1000000;
-	J9SysinfoCPUTime cpuTimeStart;
 	extensions->cpustats.ifCpuDiff = false;
 	int64_t currentTime = omrtime_current_time_millis();
-	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
 	
 	int64_t cpuTimeDiff = cpuTimeStart.cpuTime/CONST_DIVIDER - extensions->cpustats.prev_cpuTime;
 	// int64_t elapsedTime = cpuTimeStart.elapsedTime/CONST_DIVIDER - extensions->cpustats.prev_elapsedTime;
@@ -642,9 +635,6 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, om
 			omrtty_printf("average cpu utilization percentage: %.4f %%\n", extensions->cpustats.weighted_avg_cpuUtil*100);
 			omrtty_printf("average process utilization percentage over elapsedTime: %.4f %%\n", extensions->cpustats.weighted_avg_procUtil*100);
 			omrtty_printf("average process utilization percentage over WeightedAverage cpuTime: %.4f %%\n\n\n", extensions->cpustats.weighted_avg_procUtil/extensions->cpustats.weighted_avg_cpuUtil*100);
-		}
-		if (portLibraryStatus < 0) {
-			omrtty_printf("ERROR\n");
 		}
 	}
 }

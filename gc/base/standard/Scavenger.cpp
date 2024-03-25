@@ -4967,7 +4967,12 @@ MM_Scavenger::reportGCIncrementStart(MM_EnvironmentStandard *env)
 	stats->collectCollectionStatistics(env, stats);
 	stats->_startTime = omrtime_hires_clock();
 	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
-	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes);
+	J9SysinfoCPUTime cpuTimeStart;
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
+	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes ,cpuTimeStart);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
@@ -4994,8 +4999,13 @@ MM_Scavenger::reportGCIncrementEnd(MM_EnvironmentStandard *env)
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
+	J9SysinfoCPUTime cpuTimeEnd;
+	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
+	if (portLibraryStatus < 0) {
+		omrtty_printf("ERROR\n");
+	}
 	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
-	recordProcessAndCpuUtilization(env, stats->_endProcessTimes);
+	recordProcessAndCpuUtilization(env, stats->_endProcessTimes, cpuTimeEnd);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
