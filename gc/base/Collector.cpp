@@ -587,7 +587,7 @@ MM_Collector::notifyAcquireExclusiveVMAccess(MM_EnvironmentBase *env)
 }
 
 void
-MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_process_time_t endTime, J9SysinfoCPUTime cpuTimeEnd)
+MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_process_time_t endTime, J9SysinfoCPUTime cpuTimeEnd, int64_t currentTime)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
@@ -597,23 +597,21 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_
 		extensions->cpustats.prev_systemTime = endTime._systemTime/CONST_DIVIDER;
 		extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/CONST_DIVIDER;
 		extensions->cpustats.prev_elapsedTime = cpuTimeEnd.elapsedTime/CONST_DIVIDER;
-		extensions->cpustats.prev_elapsedTimeNew = omrtime_current_time_millis();
+		extensions->cpustats.prev_elapsedTimeNew = currentTime/(omrtime_hires_frequency()/1000);
 	}
 	
 }
 
 void
-MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, J9SysinfoCPUTime cpuTimeStart)
+MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, J9SysinfoCPUTime cpuTimeStart, int64_t currentTime)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
 	uint64_t CONST_DIVIDER = 1000000;
-	extensions->cpustats.ifCpuDiff = false;
-	int64_t currentTime = omrtime_current_time_millis();
-	
+	extensions->cpustats.ifCpuDiff = false;	
 	int64_t cpuTimeDiff = cpuTimeStart.cpuTime/CONST_DIVIDER - extensions->cpustats.prev_cpuTime;
 	// int64_t elapsedTime = cpuTimeStart.elapsedTime/CONST_DIVIDER - extensions->cpustats.prev_elapsedTime;
-	int64_t elapsedTime = (currentTime - extensions->cpustats.prev_elapsedTimeNew)*cpuTimeStart.numberOfCpus;
+	int64_t elapsedTime = (currentTime/(omrtime_hires_frequency()/1000) - extensions->cpustats.prev_elapsedTimeNew)*cpuTimeStart.numberOfCpus;
 	// omrtty_printf("old cpu elapsed time: %llu\n", (cpuTimeStart.elapsedTime/CONST_DIVIDER - extensions->cpustats.prev_elapsedTime));
 	// omrtty_printf("new cpu elapsed time: %llu\n", (currentTime - extensions->cpustats.prev_elapsedTimeNew)*cpuTimeStart.numberOfCpus);
 	if (0 < cpuTimeDiff && 0 < elapsedTime) {
@@ -622,6 +620,14 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, om
 		if (0 < extensions->cpustats.prev_elapsedTimeNew) {
 			if (cpuTimeDiff < diffSumTime) {
 				cpuTimeDiff = diffSumTime;
+			}
+			if (cpuTimeDiff >= elapsedTime) {
+				omrtty_printf("CPU TIME LARGER THAN ELAPSEDTIME\n");
+				omrtty_printf("Current user time is: %lu\n", cpuTimeStart.userTime);
+				omrtty_printf("Current nice time is: %lu\n", cpuTimeStart.niceTime);
+				omrtty_printf("Current system time is: %lu\n", cpuTimeStart.systemTime);
+				omrtty_printf("Current irq time is: %lu\n", cpuTimeStart.irqTime);
+				omrtty_printf("Current softirq time is: %lu\n", cpuTimeStart.softirqTime);
 			}
 			extensions->cpustats.weighted_avg_interval = extensions->cpustats.weighted_avg_interval * 0.9 + elapsedTime * 0.1;
 			double weight = elapsedTime / extensions->cpustats.weighted_avg_interval * 0.1;
