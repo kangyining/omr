@@ -125,6 +125,11 @@ enum BackOutState {
 struct cpuStats {
 	int64_t prev_userTime;
 	int64_t prev_systemTime;
+	int64_t prev_cpuUserTime;
+	int64_t prev_cpuSystemTime;
+	int64_t prev_cpuNiceTime;
+	int64_t prev_cpuIrqTime;
+	int64_t prev_cpuSoftirqTime;
 	int64_t prev_cpuTime;
 	int64_t prev_elapsedTimeNew;
 	int64_t prev_elapsedTime;

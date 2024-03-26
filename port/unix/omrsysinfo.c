@@ -4588,11 +4588,11 @@ omrsysinfo_get_CPU_utilization(struct OMRPortLibrary *portLibrary, struct J9Sysi
 		if (0 == sscanf(buf, "cpu  %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64, &userTime, &niceTime, &systemTime, &idleTime, &iowaitTime, &irqTime, &softirqTime)) {
 			return OMRPORT_ERROR_SYSINFO_GET_STATS_FAILED;
 		}
-		cpuTime->userTime = userTime;
-		cpuTime->niceTime = niceTime;
-		cpuTime->systemTime = systemTime;
-		cpuTime->irqTime = irqTime;
-		cpuTime->softirqTime = softirqTime;
+		cpuTime->userTime = userTime* NS_PER_CLK;
+		cpuTime->niceTime = niceTime* NS_PER_CLK;
+		cpuTime->systemTime = systemTime* NS_PER_CLK;
+		cpuTime->irqTime = irqTime* NS_PER_CLK;
+		cpuTime->softirqTime = softirqTime* NS_PER_CLK;
 		cpuTime->cpuTime = (userTime + niceTime + systemTime + irqTime + softirqTime) * NS_PER_CLK;
 		cpuTime->numberOfCpus = portLibrary->sysinfo_get_number_CPUs_by_type(portLibrary, OMRPORT_CPU_ONLINE);
 		cpuTime->idleTime = idleTime * NS_PER_CLK;

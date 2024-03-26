@@ -595,6 +595,11 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_
 	if (extensions->cpustats.ifCpuDiff) {
 		extensions->cpustats.prev_userTime = endTime._userTime/CONST_DIVIDER;
 		extensions->cpustats.prev_systemTime = endTime._systemTime/CONST_DIVIDER;
+		extensions->cpustats.prev_cpuUserTime = cpuTimeEnd.userTime;
+		extensions->cpustats.prev_cpuNiceTime = cpuTimeEnd.niceTime;
+		extensions->cpustats.prev_cpuSystemTime = cpuTimeEnd.systemTime;
+		extensions->cpustats.prev_cpuIrqTime = cpuTimeEnd.irqTime;
+		extensions->cpustats.prev_cpuSoftirqTime = cpuTimeEnd.softirqTime;
 		extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/CONST_DIVIDER;
 		extensions->cpustats.prev_elapsedTime = cpuTimeEnd.elapsedTime/CONST_DIVIDER;
 		extensions->cpustats.prev_elapsedTimeNew = currentTime;
@@ -619,16 +624,18 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, om
 		int64_t diffSumTime = startTime._systemTime/CONST_DIVIDER - extensions->cpustats.prev_systemTime + startTime._userTime/CONST_DIVIDER - extensions->cpustats.prev_userTime;
 		if (0 < extensions->cpustats.prev_elapsedTimeNew) {
 			int64_t originalCpuTimeDiff = cpuTimeDiff;
-			if (cpuTimeDiff < diffSumTime) {
-				cpuTimeDiff = diffSumTime;
+			if (diffSumTime > elapsedTime) {
+				omrtty_printf("PROCESS TIME LARGER THAN ELAPSED TIME\n");
+				diffSumTime = (diffSumTime + elapsedTime)/2;
+				elapsedTime = diffSumTime;
 			}
-			if (cpuTimeDiff >= elapsedTime) {
-				omrtty_printf("CPU TIME LARGER THAN ELAPSEDTIME\n");
-				omrtty_printf("Current user time is: %lu\n", cpuTimeStart.userTime);
-				omrtty_printf("Current nice time is: %lu\n", cpuTimeStart.niceTime);
-				omrtty_printf("Current system time is: %lu\n", cpuTimeStart.systemTime);
-				omrtty_printf("Current irq time is: %lu\n", cpuTimeStart.irqTime);
-				omrtty_printf("Current softirq time is: %lu\n", cpuTimeStart.softirqTime);
+			if (cpuTimeDiff > elapsedTime) {
+				omrtty_printf("CPU TIME LARGER THAN ELAPSED TIME\n");
+				cpuTimeDiff = elapsedTime;
+			}
+			if (cpuTimeDiff < diffSumTime) {
+				omrtty_printf("CPU TIME SMALLER THAN PROCESS TIME\n");
+				cpuTimeDiff = diffSumTime;
 			}
 			extensions->cpustats.weighted_avg_interval = extensions->cpustats.weighted_avg_interval * 0.9 + elapsedTime * 0.1;
 			double weight = elapsedTime / extensions->cpustats.weighted_avg_interval * 0.1;
