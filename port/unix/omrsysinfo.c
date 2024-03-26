@@ -4582,12 +4582,13 @@ omrsysinfo_get_CPU_utilization(struct OMRPortLibrary *portLibrary, struct J9Sysi
 		int64_t irqTime = 0;
 		int64_t softirqTime = 0;
 		buf[bytesRead] = '\0';
+		// printf("cpu info: %s\n", buf);
+		// printf("cpu info: %lu\n", NS_PER_CLK);
 		Trc_PRT_sysinfo_get_CPU_utilization_proc_stat_summary(buf);
 		if (0 == sscanf(buf, "cpu  %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64, &userTime, &niceTime, &systemTime, &idleTime, &iowaitTime, &irqTime, &softirqTime)) {
 			return OMRPORT_ERROR_SYSINFO_GET_STATS_FAILED;
 		}
-		strncpy(cpuTime->buf, buf, 128);
-		cpuTime->cpuTime = (userTime + niceTime + systemTime) * NS_PER_CLK;
+		cpuTime->cpuTime = (userTime + niceTime + systemTime + irqTime + softirqTime) * NS_PER_CLK;
 		cpuTime->numberOfCpus = portLibrary->sysinfo_get_number_CPUs_by_type(portLibrary, OMRPORT_CPU_ONLINE);
 		cpuTime->idleTime = idleTime * NS_PER_CLK;
 		cpuTime->elapsedTime = (userTime + niceTime + systemTime + idleTime + iowaitTime + irqTime + softirqTime) * NS_PER_CLK;

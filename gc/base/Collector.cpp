@@ -620,7 +620,9 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, om
 		extensions->cpustats.ifCpuDiff = true;
 		int64_t diffSumTime = startTime._systemTime/CONST_DIVIDER - extensions->cpustats.prev_systemTime + startTime._userTime/CONST_DIVIDER - extensions->cpustats.prev_userTime;
 		if (0 < extensions->cpustats.prev_elapsedTimeNew) {
-			
+			if (cpuTimeDiff < diffSumTime) {
+				cpuTimeDiff = diffSumTime;
+			}
 			extensions->cpustats.weighted_avg_interval = extensions->cpustats.weighted_avg_interval * 0.9 + elapsedTime * 0.1;
 			double weight = elapsedTime / extensions->cpustats.weighted_avg_interval * 0.1;
 			omrtty_printf("current system and user time: %llu\n", diffSumTime);
