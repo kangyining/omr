@@ -1712,17 +1712,11 @@ MM_ParallelGlobalGC::reportGCStart(MM_EnvironmentBase *env)
 void
 MM_ParallelGlobalGC::reportGCIncrementStart(MM_EnvironmentBase *env)
 {
-	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	// OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
-	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
-	J9SysinfoCPUTime cpuTimeStart;
-	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
-	if (portLibraryStatus < 0) {
-		omrtty_printf("ERROR\n");
-	}
-	stats->_startTime = omrtime_hires_clock();
-	calculateProcessAndCpuUtilizationDelta(env, stats->_startProcessTimes, cpuTimeStart, stats->_startTime);
+	intptr_t rc = -1;
+	calculateProcessAndCpuUtilizationDelta(env, stats, &rc);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
@@ -1746,17 +1740,11 @@ MM_ParallelGlobalGC::reportGCIncrementStart(MM_EnvironmentBase *env)
 void
 MM_ParallelGlobalGC::reportGCIncrementEnd(MM_EnvironmentBase *env)
 {
-	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	// OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
-	stats->_endTime = omrtime_hires_clock();
-	J9SysinfoCPUTime cpuTimeEnd;
-	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeEnd);
-	if (portLibraryStatus < 0) {
-		omrtty_printf("ERROR\n");
-	}
-	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
-	recordProcessAndCpuUtilization(env, stats->_endProcessTimes, cpuTimeEnd, stats->_endTime);
+	intptr_t rc = -1;
+	recordProcessAndCpuUtilization(env, stats, &rc);
 	switch (rc){
 	case -1: /* Error: Function un-implemented on architecture */
 	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */

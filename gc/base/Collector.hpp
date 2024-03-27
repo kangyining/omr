@@ -31,7 +31,7 @@
 #include "BaseVirtual.hpp"
 #include "EnvironmentBase.hpp"
 #include "ModronAssertions.h"
-
+#include "CollectionStatisticsStandard.hpp"
 class MM_AllocateDescription;
 class MM_AllocationContext;
 class MM_CollectorLanguageInterface;
@@ -300,8 +300,8 @@ public:
 	 * @return pointer to collector/phase specific concurrent stats structure
 	 */
 	virtual MM_ConcurrentPhaseStatsBase *getConcurrentPhaseStats() { return NULL; }
-	virtual void recordProcessAndCpuUtilization(MM_EnvironmentBase *env, omrthread_process_time_t endTime, J9SysinfoCPUTime cpuTimeEnd, int64_t currentTime);
-	virtual void calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, omrthread_process_time_t startTime, J9SysinfoCPUTime cpuTimeStart, int64_t currentTime);
+	virtual void recordProcessAndCpuUtilization(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats, intptr_t *rc);
+	virtual void calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats, intptr_t *rc);
 	MM_Collector()
 		: MM_BaseVirtual()
 		, _exclusiveAccessCount(0)
