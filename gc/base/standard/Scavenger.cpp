@@ -4965,20 +4965,7 @@ MM_Scavenger::reportGCIncrementStart(MM_EnvironmentStandard *env)
 	// OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
-	intptr_t rc = -1;
-	calculateProcessAndCpuUtilizationDelta(env, stats, &rc);
-	switch (rc){
-	case -1: /* Error: Function un-implemented on architecture */
-	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
-		stats->_startProcessTimes._userTime = I_64_MAX;
-		stats->_startProcessTimes._systemTime = I_64_MAX;
-		break;
-	case  0:
-		break; /* Success */
-	default:
-		Assert_MM_unreachable();
-	}
-
+	calculateProcessAndCpuUtilizationDelta(env, stats);
 	TRIGGER_J9HOOK_MM_PRIVATE_GC_INCREMENT_START(
 		_extensions->privateHookInterface,
 		env->getOmrVMThread(),
@@ -4993,19 +4980,7 @@ MM_Scavenger::reportGCIncrementEnd(MM_EnvironmentStandard *env)
 	// OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_CollectionStatisticsStandard *stats = (MM_CollectionStatisticsStandard *)env->_cycleState->_collectionStatistics;
 	stats->collectCollectionStatistics(env, stats);
-	intptr_t rc = -1;
-	recordProcessAndCpuUtilization(env, stats, &rc);
-	switch (rc){
-	case -1: /* Error: Function un-implemented on architecture */
-	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
-		stats->_endProcessTimes._userTime = 0;
-		stats->_endProcessTimes._systemTime = 0;
-		break;
-	case  0:
-		break; /* Success */
-	default:
-		Assert_MM_unreachable();
-	}
+	recordProcessAndCpuUtilization(env, stats);
 	stats->_stallTime = _extensions->scavengerStats.getStallTime();
 
 	TRIGGER_J9HOOK_MM_PRIVATE_GC_INCREMENT_END(

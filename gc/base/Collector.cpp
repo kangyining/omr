@@ -587,7 +587,7 @@ MM_Collector::notifyAcquireExclusiveVMAccess(MM_EnvironmentBase *env)
 }
 
 void
-MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats, intptr_t *rc)
+MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
@@ -598,13 +598,25 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, MM_Collect
 	if (portLibraryStatus < 0) {
 		omrtty_printf("ERROR\n");
 	}
-	*rc = omrthread_get_process_times(&stats->_endProcessTimes);
+	intptr_t rc = omrthread_get_process_times(&stats->_endProcessTimes);
+	switch (rc){
+	case -1: /* Error: Function un-implemented on architecture */
+	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
+		stats->_endProcessTimes._userTime = 0;
+		stats->_endProcessTimes._systemTime = 0;
+		break;
+	case  0:
+		break; /* Success */
+	default:
+		Assert_MM_unreachable();
+	}
 	if (extensions->cpustats.ifCpuDiff) {
 		extensions->cpustats.prev_userTime = stats->_endProcessTimes._userTime/CONST_DIVIDER;
 		extensions->cpustats.prev_systemTime = stats->_endProcessTimes._systemTime/CONST_DIVIDER;
 		extensions->cpustats.prev_cpuUserTime = cpuTimeEnd.userTime;
 		extensions->cpustats.prev_cpuNiceTime = cpuTimeEnd.niceTime;
 		extensions->cpustats.prev_cpuSystemTime = cpuTimeEnd.systemTime;
+		extensions->cpustats.prev_cpuIdleTime = cpuTimeEnd.idleTime;
 		extensions->cpustats.prev_cpuIrqTime = cpuTimeEnd.irqTime;
 		extensions->cpustats.prev_cpuSoftirqTime = cpuTimeEnd.softirqTime;
 		extensions->cpustats.prev_cpuTime = cpuTimeEnd.cpuTime/CONST_DIVIDER;
@@ -615,12 +627,23 @@ MM_Collector::recordProcessAndCpuUtilization(MM_EnvironmentBase *env, MM_Collect
 }
 
 void
-MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats, intptr_t *rc)
+MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, MM_CollectionStatisticsStandard *stats)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
 	MM_GCExtensionsBase *extensions = env->getExtensions();
 	uint64_t CONST_DIVIDER = 1000000;
-	*rc = omrthread_get_process_times(&stats->_startProcessTimes);
+	intptr_t rc = omrthread_get_process_times(&stats->_startProcessTimes);
+	switch (rc){
+	case -1: /* Error: Function un-implemented on architecture */
+	case -2: /* Error: getrusage() or GetProcessTimes() returned error value */
+		stats->_startProcessTimes._userTime = I_64_MAX;
+		stats->_startProcessTimes._systemTime = I_64_MAX;
+		break;
+	case  0:
+		break; /* Success */
+	default:
+		Assert_MM_unreachable();
+	}
 	J9SysinfoCPUTime cpuTimeStart;
 	intptr_t portLibraryStatus = omrsysinfo_get_CPU_utilization(&cpuTimeStart);
 	if (portLibraryStatus < 0) {
