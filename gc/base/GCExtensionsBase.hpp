@@ -140,6 +140,7 @@ struct cpuStats {
 	// int64_t weighted_avg_idleTime;
 	double weighted_avg_cpuUtil;
 	double weighted_avg_procUtil;
+	double weighted_avg_cpuIdle;
 	bool ifCpuDiff;
 
 };
