@@ -25,6 +25,7 @@
  * @file
  * @ingroup GC_Base
  */
+#include <math.h>
 
 #include "omrcfg.h"
 #include "omr.h"
@@ -515,7 +516,8 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
 			toReturn = activeCPUs;
 		}
-		uintptr_t recommendThreadsFromMultiJVM = MM_Math::roundToSizeofUDATA(activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		omrtty_printf("before round: %f\n", activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		uintptr_t recommendThreadsFromMultiJVM = round(activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 		toReturn = (toReturn >= 1) ? toReturn : 1;
