@@ -474,15 +474,16 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	 *  2) Adaptive threading flag is not set (-XX:-AdaptiveGCThreading)
 	 *  3) or simply the task wasn't recommended a thread count (currently only recommended for STW Scavenge Tasks)
 	 */
-	if (UDATA_MAX != task->getRecommendedWorkingThreads()) {
+	uintptr_t recommendedWorkingThreads = task->getRecommendedWorkingThreads(env);
+	if (UDATA_MAX != recommendedWorkingThreads) {
 		/* Bound the recommended thread count. Determine the  upper bound for the thread count,
 		 * This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
 		 */
-		taskActiveThreadCount = OMR_MIN(_threadCount, task->getRecommendedWorkingThreads());
+		taskActiveThreadCount = OMR_MIN(_threadCount, recommendedWorkingThreads);
 
 		_activeThreadCount = taskActiveThreadCount;
 
-		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), taskActiveThreadCount);
+		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(recommendedWorkingThreads, taskActiveThreadCount);
 	}
 
 	task->setThreadCount(taskActiveThreadCount);

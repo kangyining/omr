@@ -82,7 +82,7 @@ public:
 	virtual void addToNotifyStallTime(MM_EnvironmentBase *env, uint64_t startTime, uint64_t endTime);
 #endif /* J9MODRON_TGC_PARALLEL_STATISTICS */
 
-	virtual uintptr_t getRecommendedWorkingThreads() { return _recommendedThreads; };
+	virtual uintptr_t getRecommendedWorkingThreads(MM_EnvironmentBase *env);
 
 	/**
 	 * Create a ParallelScavengeTask object.
