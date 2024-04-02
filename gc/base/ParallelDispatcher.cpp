@@ -502,7 +502,7 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		 */
 		MM_Heap *heap = (MM_Heap *)_extensions->heap;
 		uintptr_t heapSize = heap->getActiveMemorySize();
-		uintptr_t maximumThreadsForHeapSize = (heapSize > MINIMUM_HEAP_PER_THREAD) ?  heapSize / MINIMUM_HEAP_PER_THREAD : 1;
+		uintptr_t maximumThreadsForHeapSize = heapSize / MINIMUM_HEAP_PER_THREAD;
 		if (maximumThreadsForHeapSize < maxThreadCount) {
 			Trc_MM_ParallelDispatcher_adjustThreadCount_smallHeap(maximumThreadsForHeapSize);
 			toReturn = maximumThreadsForHeapSize;
@@ -515,9 +515,10 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
 			toReturn = activeCPUs;
 		}
-		uintptr_t recommendThreadsFromMultiJVM = activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil));
+		uintptr_t recommendThreadsFromMultiJVM = MM_Math::roundToSizeofUDATA(activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
+		toReturn = (toReturn >= 1) ? toReturn : 1;
 	}
 	return toReturn;
 }
