@@ -129,16 +129,4 @@ MM_ParallelScavengeTask::addToNotifyStallTime(MM_EnvironmentBase *env, uint64_t 
 
 #endif /* J9MODRON_TGC_PARALLEL_STATISTICS */
 
-uintptr_t
-MM_ParallelScavengeTask::getRecommendedWorkingThreads(MM_EnvironmentBase *env)
-{
-	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
-	uintptr_t recommendThreadsFromMultiJVM = UDATA_MAX;
-	MM_GCExtensionsBase *extensions = env->getExtensions();
-	uintptr_t hardwareThreads = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
-	recommendThreadsFromMultiJVM = hardwareThreads * (extensions->cpustats.weighted_avg_cpuUtil + (1-extensions->cpustats.weighted_avg_cpuUtil));
-	omrtty_printf("Current recommend threads: %llu\n", _recommendedThreads);
-	omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
-	return OMR_MIN(_recommendedThreads, recommendThreadsFromMultiJVM);
-}
 #endif /* defined(OMR_GC_MODRON_SCAVENGER) */

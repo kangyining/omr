@@ -474,16 +474,15 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	 *  2) Adaptive threading flag is not set (-XX:-AdaptiveGCThreading)
 	 *  3) or simply the task wasn't recommended a thread count (currently only recommended for STW Scavenge Tasks)
 	 */
-	uintptr_t recommendedWorkingThreads = task->getRecommendedWorkingThreads(env);
-	if (UDATA_MAX != recommendedWorkingThreads) {
+	if (UDATA_MAX != task->getRecommendedWorkingThreads()) {
 		/* Bound the recommended thread count. Determine the  upper bound for the thread count,
 		 * This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
 		 */
-		taskActiveThreadCount = OMR_MIN(_threadCount, recommendedWorkingThreads);
+		taskActiveThreadCount = OMR_MIN(_threadCount, task->getRecommendedWorkingThreads());
 
 		_activeThreadCount = taskActiveThreadCount;
 
-		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(recommendedWorkingThreads, taskActiveThreadCount);
+		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), taskActiveThreadCount);
 	}
 
 	task->setThreadCount(taskActiveThreadCount);
@@ -516,8 +515,10 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 			Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
 			toReturn = activeCPUs;
 		}
+		uintptr_t recommendThreadsFromMultiJVM = activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil));
+		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
+		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 	}
-	
 	return toReturn;
 }
 
