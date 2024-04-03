@@ -646,15 +646,15 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, MM
 	}
 	stats->_startTime = omrtime_hires_clock();
 	extensions->cpustats.ifCpuDiff = false;	
-	int64_t cpuTimeDiff = cpuTimeStart.cpuTime/CONST_DIVIDER - extensions->cpustats.prev_cpuTime;
+	int64_t cpuTimeDiff = cpuTimeStart.cpuTime / CONST_DIVIDER - extensions->cpustats.prev_cpuTime;
 	// int64_t elapsedTime = cpuTimeStart.elapsedTime/CONST_DIVIDER - extensions->cpustats.prev_elapsedTime;
-	int64_t elapsedTime = omrtime_hires_delta(extensions->cpustats.prev_elapsedTimeNew, stats->_startTime, OMRPORT_TIME_DELTA_IN_MILLISECONDS)*cpuTimeStart.numberOfCpus;
+	int64_t elapsedTime = omrtime_hires_delta(extensions->cpustats.prev_elapsedTimeNew, stats->_startTime, OMRPORT_TIME_DELTA_IN_MILLISECONDS) * omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
 	// omrtty_printf("old cpu elapsed time: %llu\n", (cpuTimeStart.elapsedTime/CONST_DIVIDER - extensions->cpustats.prev_elapsedTime));
 	// omrtty_printf("new cpu elapsed time: %llu\n", (currentTime - extensions->cpustats.prev_elapsedTimeNew)*cpuTimeStart.numberOfCpus);
 	if (0 < cpuTimeDiff && 0 < elapsedTime) {
 		extensions->cpustats.ifCpuDiff = true;
-		int64_t diffSumTime = stats->_startProcessTimes._systemTime/CONST_DIVIDER - extensions->cpustats.prev_systemTime + stats->_startProcessTimes._userTime/CONST_DIVIDER - extensions->cpustats.prev_userTime;
-		int64_t diffIdleTime = cpuTimeStart.idleTime/CONST_DIVIDER - extensions->cpustats.prev_cpuIdleTime;
+		int64_t diffSumTime = stats->_startProcessTimes._systemTime / CONST_DIVIDER - extensions->cpustats.prev_systemTime + stats->_startProcessTimes._userTime / CONST_DIVIDER - extensions->cpustats.prev_userTime;
+		int64_t diffIdleTime = cpuTimeStart.idleTime / CONST_DIVIDER - extensions->cpustats.prev_cpuIdleTime;
 		if (0 < extensions->cpustats.prev_elapsedTimeNew) {
 			int64_t originalCpuTimeDiff = cpuTimeDiff;
 			if (diffSumTime > elapsedTime) {
@@ -678,12 +678,12 @@ MM_Collector::calculateProcessAndCpuUtilizationDelta(MM_EnvironmentBase *env, MM
 			omrtty_printf("new elapsed time: %llu\n", elapsedTime);
 			omrtty_printf("WA time: %f\n", extensions->cpustats.weighted_avg_interval);
 			omrtty_printf("weight: %f\n", weight);
-			omrtty_printf("current cpu utilization percentage: %.4f %%\n", (double)(cpuTimeDiff)/elapsedTime*100);
-			extensions->cpustats.weighted_avg_cpuUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuUtil, (double)(cpuTimeDiff)/elapsedTime, 1.0 - weight);
-			omrtty_printf("current process utilization percentage: %.4f %%\n", (double)(diffSumTime)/(cpuTimeDiff)*100);
-			extensions->cpustats.weighted_avg_procUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_procUtil, (double)(diffSumTime)/(elapsedTime), 1.0 - weight);
-			omrtty_printf("current cpu idle percentage: %.4f %%\n", (double)(diffIdleTime)/(elapsedTime)*100);
-			extensions->cpustats.weighted_avg_cpuIdle = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuIdle, (double)(diffIdleTime)/(elapsedTime), 1.0 - weight);
+			omrtty_printf("current cpu utilization percentage: %.4f %%\n", (double)(cpuTimeDiff) / elapsedTime*100);
+			extensions->cpustats.weighted_avg_cpuUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuUtil, (double)(cpuTimeDiff) / elapsedTime, 1.0 - weight);
+			omrtty_printf("current process utilization percentage: %.4f %%\n", (double)(diffSumTime) / (cpuTimeDiff)*100);
+			extensions->cpustats.weighted_avg_procUtil = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_procUtil, (double)(diffSumTime) / (elapsedTime), 1.0 - weight);
+			omrtty_printf("current cpu idle percentage: %.4f %%\n", (double)(diffIdleTime) / (elapsedTime)*100);
+			extensions->cpustats.weighted_avg_cpuIdle = MM_Math::weightedAverage(extensions->cpustats.weighted_avg_cpuIdle, (double)(diffIdleTime) / (elapsedTime), 1.0 - weight);
 			omrtty_printf("average cpu utilization percentage: %.4f %%\n", extensions->cpustats.weighted_avg_cpuUtil*100);
 			omrtty_printf("average process utilization percentage over elapsedTime: %.4f %%\n", extensions->cpustats.weighted_avg_procUtil*100);
 			omrtty_printf("average process utilization percentage over WeightedAverage cpuTime: %.4f %%\n", extensions->cpustats.weighted_avg_procUtil/extensions->cpustats.weighted_avg_cpuUtil*100);

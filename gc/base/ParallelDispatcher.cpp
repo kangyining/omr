@@ -485,7 +485,8 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 
 		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), taskActiveThreadCount);
 	}
-
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	omrtty_printf("final gc threads:%llu\n", taskActiveThreadCount);
 	task->setThreadCount(taskActiveThreadCount);
  	return taskActiveThreadCount;
 }
@@ -521,6 +522,7 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 		toReturn = (toReturn >= 1) ? toReturn : 1;
+		omrtty_printf("actual return: %llu\n", toReturn);
 	}
 	return toReturn;
 }
