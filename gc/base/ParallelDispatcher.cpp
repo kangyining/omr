@@ -449,6 +449,8 @@ MM_ParallelDispatcher::wakeUpThreads(uintptr_t count)
 uintptr_t
 MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env, MM_Task *task, uintptr_t threadCount)
 {
+	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
+	_activeThreadCount = _threadCount;
 	/* Metronome recomputes the number of GC threads at the beginning of
 	 * a GC cycle. It may not be safe to do so at the beginning of a task
 	 */
@@ -459,7 +461,7 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 		 *  3) 1 if we have not yet started the GC helpers or are in process of  shutting down
 		 *     the GC helper threads.
 		 */
-		_activeThreadCount = adjustThreadCount(_threadCount);
+		_activeThreadCount = adjustThreadCount(_activeThreadCount);
 	}
 
 
@@ -467,7 +469,7 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	 * Obey it, only if <= than what we calculated it should be (there might not be more active threads
 	 * available and ready to run).
 	 */
-	uintptr_t taskActiveThreadCount = OMR_MIN(_activeThreadCount, threadCount);
+	// uintptr_t taskActiveThreadCount = OMR_MIN(_activeThreadCount, threadCount);
 
 	/* Account for Adaptive Threading. RecommendedWorkingThreads will not be set (will return UDATA_MAX) if:
 	 *
@@ -479,16 +481,15 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 		/* Bound the recommended thread count. Determine the  upper bound for the thread count,
 		 * This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
 		 */
-		taskActiveThreadCount = OMR_MIN(_threadCount, task->getRecommendedWorkingThreads());
-
-		_activeThreadCount = taskActiveThreadCount;
-
-		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), taskActiveThreadCount);
+		_activeThreadCount = OMR_MIN(_activeThreadCount, task->getRecommendedWorkingThreads());
+		omrtty_printf("getRecommendedWorkingThreads:%llu\n", _activeThreadCount);
+		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), _activeThreadCount);
 	}
-	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
-	omrtty_printf("final gc threads:%llu\n", taskActiveThreadCount);
-	task->setThreadCount(taskActiveThreadCount);
- 	return taskActiveThreadCount;
+	_activeThreadCount = OMR_MIN(_activeThreadCount, threadCount);
+	omrtty_printf("final gc threads:%llu\n", _activeThreadCount);
+	
+	task->setThreadCount(_activeThreadCount);
+ 	return _activeThreadCount;
 }
 
 uintptr_t 
@@ -522,7 +523,7 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 		toReturn = (toReturn >= 1) ? toReturn : 1;
-		omrtty_printf("actual return: %llu\n", toReturn);
+		omrtty_printf("adjustThreadCount return: %llu\n", toReturn);
 	}
 	return toReturn;
 }
