@@ -519,8 +519,8 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		// 	Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
 		// 	toReturn = activeCPUs;
 		// }
-		omrtty_printf("before round: %f\n", maxThreadCount * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
-		uintptr_t recommendThreadsFromMultiJVM = round(maxThreadCount * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		omrtty_printf("before round: %f\n", omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET) * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		uintptr_t recommendThreadsFromMultiJVM = round(omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET) * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 		toReturn = (toReturn >= 1) ? toReturn : 1;
