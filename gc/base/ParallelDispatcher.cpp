@@ -450,7 +450,11 @@ uintptr_t
 MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env, MM_Task *task, uintptr_t threadCount)
 {
 	OMRPORT_ACCESS_FROM_ENVIRONMENT(env);
-	_activeThreadCount = _threadCount;
+	/* Caller might have tried to override thread count for this task with an explicit value.
+	 * Obey it, only if <= than what we calculated it should be (there might not be more active threads
+	 * available and ready to run).
+	 */
+	_activeThreadCount = OMR_MIN(_threadCount, threadCount);
 	/* Metronome recomputes the number of GC threads at the beginning of
 	 * a GC cycle. It may not be safe to do so at the beginning of a task
 	 */
@@ -465,12 +469,6 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	}
 
 
-	/* Caller might have tried to override thread count for this task with an explicit value.
-	 * Obey it, only if <= than what we calculated it should be (there might not be more active threads
-	 * available and ready to run).
-	 */
-	// uintptr_t taskActiveThreadCount = OMR_MIN(_activeThreadCount, threadCount);
-
 	/* Account for Adaptive Threading. RecommendedWorkingThreads will not be set (will return UDATA_MAX) if:
 	 *
 	 *  1) User forced a thread count (e.g Xgcthreads)
@@ -482,10 +480,10 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 		 * This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
 		 */
 		_activeThreadCount = OMR_MIN(_activeThreadCount, task->getRecommendedWorkingThreads());
-		omrtty_printf("getRecommendedWorkingThreads:%llu\n", _activeThreadCount);
+		omrtty_printf("getRecommendedWorkingThreads:%llu\n", task->getRecommendedWorkingThreads());
 		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), _activeThreadCount);
 	}
-	_activeThreadCount = OMR_MIN(_activeThreadCount, threadCount);
+	
 	omrtty_printf("final gc threads:%llu\n", _activeThreadCount);
 	
 	task->setThreadCount(_activeThreadCount);
