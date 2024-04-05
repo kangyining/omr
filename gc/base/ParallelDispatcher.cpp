@@ -454,36 +454,38 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	 * Obey it, only if <= than what we calculated it should be (there might not be more active threads
 	 * available and ready to run).
 	 */
-	_activeThreadCount = OMR_MIN(_threadCount, threadCount);
-	/* Metronome recomputes the number of GC threads at the beginning of
-	 * a GC cycle. It may not be safe to do so at the beginning of a task
-	 */
-	if (!_extensions->isMetronomeGC()) {
-		/* On entry _threadCount will be either:
-		 *  1) the value specified by user on -Xgcthreads
-		 *  2) the number of active CPU's at JVM startup
-		 *  3) 1 if we have not yet started the GC helpers or are in process of  shutting down
-		 *     the GC helper threads.
-		 */
-		_activeThreadCount = adjustThreadCount(_activeThreadCount);
-	}
+	if (UDATA_MAX != threadCount) {
+		_activeThreadCount = OMR_MIN(_threadCount, threadCount);
+	} else {
+		/* Metronome recomputes the number of GC threads at the beginning of
+		* a GC cycle. It may not be safe to do so at the beginning of a task
+		*/
+		if (!_extensions->isMetronomeGC()) {
+			/* On entry _threadCount will be either:
+			*  1) the value specified by user on -Xgcthreads
+			*  2) the number of active CPU's at JVM startup
+			*  3) 1 if we have not yet started the GC helpers or are in process of  shutting down
+			*     the GC helper threads.
+			*/
+			_activeThreadCount = adjustThreadCount(_activeThreadCount);
+		}
 
 
-	/* Account for Adaptive Threading. RecommendedWorkingThreads will not be set (will return UDATA_MAX) if:
-	 *
-	 *  1) User forced a thread count (e.g Xgcthreads)
-	 *  2) Adaptive threading flag is not set (-XX:-AdaptiveGCThreading)
-	 *  3) or simply the task wasn't recommended a thread count (currently only recommended for STW Scavenge Tasks)
-	 */
-	if (UDATA_MAX != task->getRecommendedWorkingThreads()) {
-		/* Bound the recommended thread count. Determine the  upper bound for the thread count,
-		 * This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
-		 */
-		_activeThreadCount = OMR_MIN(_activeThreadCount, task->getRecommendedWorkingThreads());
-		omrtty_printf("getRecommendedWorkingThreads:%llu\n", task->getRecommendedWorkingThreads());
-		Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), _activeThreadCount);
+		/* Account for Adaptive Threading. RecommendedWorkingThreads will not be set (will return UDATA_MAX) if:
+		*
+		*  1) User forced a thread count (e.g Xgcthreads)
+		*  2) Adaptive threading flag is not set (-XX:-AdaptiveGCThreading)
+		*  3) or simply the task wasn't recommended a thread count (currently only recommended for STW Scavenge Tasks)
+		*/
+		if (UDATA_MAX != task->getRecommendedWorkingThreads()) {
+			/* Bound the recommended thread count. Determine the  upper bound for the thread count,
+			* This will either be the user specified gcMaxThreadCount (-XgcmaxthreadsN) or else default max
+			*/
+			_activeThreadCount = OMR_MIN(_activeThreadCount, task->getRecommendedWorkingThreads());
+			omrtty_printf("getRecommendedWorkingThreads:%llu\n", task->getRecommendedWorkingThreads());
+			Trc_MM_ParallelDispatcher_recomputeActiveThreadCountForTask_useCollectorRecommendedThreads(task->getRecommendedWorkingThreads(), _activeThreadCount);
+		}
 	}
-	
 	omrtty_printf("final gc threads:%llu\n", _activeThreadCount);
 	
 	task->setThreadCount(_activeThreadCount);
