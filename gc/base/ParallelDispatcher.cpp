@@ -454,6 +454,7 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 	 * Obey it, only if <= than what we calculated it should be (there might not be more active threads
 	 * available and ready to run).
 	 */
+	_activeThreadCount = OMR_MIN(_threadCount, omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET));
 	if (UDATA_MAX != threadCount) {
 		_activeThreadCount = OMR_MIN(_threadCount, threadCount);
 	} else {
@@ -513,13 +514,13 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 
 		OMRPORT_ACCESS_FROM_OMRVM(_extensions->getOmrVM());
 		/* No, use the current active CPU count (unless it would overflow our threadtables) */
-		uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
-		if (activeCPUs < toReturn) {
-			Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
-			toReturn = activeCPUs;
-		}
-		omrtty_printf("before round: %f\n", activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
-		uintptr_t recommendThreadsFromMultiJVM = round(activeCPUs * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		// uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
+		// if (activeCPUs < toReturn) {
+		// 	Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
+		// 	toReturn = activeCPUs;
+		// }
+		omrtty_printf("before round: %f\n", maxThreadCount * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
+		uintptr_t recommendThreadsFromMultiJVM = round(maxThreadCount * (_extensions->cpustats.weighted_avg_procUtil + (1 - _extensions->cpustats.weighted_avg_cpuUtil)));
 		omrtty_printf("New recommend threads: %llu\n", recommendThreadsFromMultiJVM);
 		toReturn = OMR_MIN(toReturn, recommendThreadsFromMultiJVM);
 		toReturn = (toReturn >= 1) ? toReturn : 1;
