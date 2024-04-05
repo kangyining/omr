@@ -162,7 +162,7 @@ protected:
 
 	void setThreadInitializationComplete(MM_EnvironmentBase *env);
 	
-	uintptr_t adjustThreadCount(uintptr_t maxThreadCount);
+	uintptr_t adjustThreadCount();
 	
 	/**
 	 * Main routine to fork and startup GC threads.

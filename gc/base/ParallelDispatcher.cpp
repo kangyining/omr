@@ -315,7 +315,7 @@ MM_ParallelDispatcher::startUpThreads()
 
 	if (result) {
 		_threadCount = _threadCountMaximum;
-		_activeThreadCount = adjustThreadCount(_threadCount);
+		_activeThreadCount = _threadCount;
 	}
 
 	return result;
@@ -468,7 +468,7 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 			*  3) 1 if we have not yet started the GC helpers or are in process of  shutting down
 			*     the GC helper threads.
 			*/
-			_activeThreadCount = adjustThreadCount(_activeThreadCount);
+			_activeThreadCount = adjustThreadCount();
 		}
 
 
@@ -494,9 +494,9 @@ MM_ParallelDispatcher::recomputeActiveThreadCountForTask(MM_EnvironmentBase *env
 }
 
 uintptr_t 
-MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
+MM_ParallelDispatcher::adjustThreadCount()
 {
-	uintptr_t toReturn = maxThreadCount;
+	uintptr_t toReturn = UDATA_MAX;
 	
 	/* Did user force a fixed number of gc threads? */
 	if (!_extensions->gcThreadCountForced) {
@@ -507,13 +507,14 @@ MM_ParallelDispatcher::adjustThreadCount(uintptr_t maxThreadCount)
 		MM_Heap *heap = (MM_Heap *)_extensions->heap;
 		uintptr_t heapSize = heap->getActiveMemorySize();
 		uintptr_t maximumThreadsForHeapSize = heapSize / MINIMUM_HEAP_PER_THREAD;
-		if (maximumThreadsForHeapSize < maxThreadCount) {
+		if (maximumThreadsForHeapSize < _threadCount) {
 			Trc_MM_ParallelDispatcher_adjustThreadCount_smallHeap(maximumThreadsForHeapSize);
 			toReturn = maximumThreadsForHeapSize;
 		}
 
 		OMRPORT_ACCESS_FROM_OMRVM(_extensions->getOmrVM());
 		/* No, use the current active CPU count (unless it would overflow our threadtables) */
+		// this part is moved outside
 		// uintptr_t activeCPUs = omrsysinfo_get_number_CPUs_by_type(OMRPORT_CPU_TARGET);
 		// if (activeCPUs < toReturn) {
 		// 	Trc_MM_ParallelDispatcher_adjustThreadCount_ReducedCPU(activeCPUs);
@@ -761,7 +762,7 @@ MM_ParallelDispatcher::expandThreadPool(MM_EnvironmentBase *env)
 		}
 	}
 
-	_activeThreadCount = adjustThreadCount(_threadCount);
+	_activeThreadCount = _threadCount;
 
 	Trc_MM_ParallelDispatcher_expandThreadPool_Exit(preExpandThreadCount, _extensions->gcThreadCount, _threadShutdownCount);
 
